@@ -3,6 +3,7 @@ import subprocess
 import torch
 import numpy as np
 import h5py
+
 class BenchmarkDataset(torch.utils.data.Dataset):
     """
     2d: dSprites

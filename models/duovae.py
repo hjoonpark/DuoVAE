@@ -52,9 +52,6 @@ class DuoVAE(nn.Module):
         # encode
         (z_mean, w_mean), (z_logvar, w_logvar) = self.encoder_x(x)
         # sample w, z
-        # print("Z:", z_mean.shape, z_mean.min().item(), z_mean.max().item(), z_logvar.shape, z_logvar.min().item(), z_logvar.max().item())
-        # print("W:", w_mean.shape, w_mean.min().item(), w_mean.max().item(), w_logvar.shape, w_logvar.min().item(), w_logvar.max().item())
-        # print()
         z, Qz = reparameterize(z_mean, z_logvar, sample)
         w, Qw = reparameterize(w_mean, w_logvar, sample)
         

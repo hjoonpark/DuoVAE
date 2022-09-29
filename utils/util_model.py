@@ -38,7 +38,8 @@ def get_available_devices(logger):
         if torch.backends.mps.is_available():
             logger.print("Apple silicon (arm64) is available")
             # this ensures that the current PyTorch installation was built with MPS activated.
-            device = "mps:0"
+            device = "cpu"
+            # device = "mps:0"
             gpu_ids.append(0) # (2022) There is no multi-MPS Apple device, yet
             if not torch.backends.mps.is_built():
                 logger.print("Current PyTorch installation was not built with MPS activated. Using cpu instead.")
