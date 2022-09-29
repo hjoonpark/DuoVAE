@@ -29,7 +29,7 @@ class PcVAE(nn.Module):
         hid_dim_x = params["common"]["hid_dim_x"]
         hid_dim_y = params["common"]["hid_dim_y"]
         img_channel = params["common"]["img_channel"]
-        y_dim = params["common"]["y_dim"]
+        self.y_dim = params["common"]["y_dim"]
         self.x_recon_weight = params["common"]["x_recon_weight"]
         self.y_recon_weight = params["common"]["y_recon_weight"]
         self.beta = (params["common"]["beta_z"] + params["common"]["beta_w"])*0.5
@@ -38,7 +38,7 @@ class PcVAE(nn.Module):
 
         # parameters
         self.encoder = torch.nn.DataParallel(Encoder(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
-        self.decoder = torch.nn.DataParallel(Decoder(img_channel, hid_channel, hid_dim_x, z_dim, w_dim, y_dim, hid_dim_y)).to(self.device)
+        self.decoder = torch.nn.DataParallel(Decoder(img_channel, hid_channel, hid_dim_x, z_dim, w_dim, self.y_dim, hid_dim_y)).to(self.device)
         self.model_names = ["encoder", "decoder"]
         
         if is_train:
@@ -68,11 +68,11 @@ class PcVAE(nn.Module):
         # decode
         x_logits, self.x_recon, self.y_recon = self.decode(self.z, self.w)
 
-        # losses
+        # losses: reconstruction losses are rescaled w.r.t. image and label dimensions so that hyperparameters are easier to tune and consistent regardless of the data dimensions.
         # https://github.com/xguo7/PCVAE/blob/dd85743c148b86dd2b583cb074b819f51d6b7a48/disvae/models/losses.py#L676
-        batch_size = self.x.shape[0]
-        self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="sum") / batch_size
-        self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="sum") / batch_size
+        batch_size, h, w = self.x.shape[0]
+        self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="sum") / (batch_size*h*w)
+        self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
 
         Pz = dist.Normal(torch.zeros_like(self.z), torch.ones_like(self.z))
         Pw = dist.Normal(torch.zeros_like(self.w), torch.ones_like(self.w))

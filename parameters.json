@@ -9,7 +9,7 @@
     "common": {
         "z_dim": 4,
         "w_dim": 3,
-        "x_recon_weight": 0.0001,
+        "x_recon_weight": 1.0,
         "y_recon_weight": 1.0,
         "beta_z": 0.005,
         "beta_w": 0.005,
