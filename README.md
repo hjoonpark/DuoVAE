@@ -2,29 +2,40 @@
 
 (brief introduction)
 
-## Supported
+**DuoVAE**: [Paper]() | [Project]()
+
+(Image)
+
+--- 
+## Prerequisites
 - Linux, MacOS, Windows
 - CPU, CUDA, MPS (arm64 Apple silicon)
 
-## Install
+--- 
+## Installation
 
-[Option 1] 
+1. Clone this repo: `git clone https://github.com/hjoonpark/DuoVAE.git`
 
-- (Recommended) Manually create and configure a python (recommended version v3.7+) virtual environment and install the following packages
-    
-      torch, h5py, matplotlib, seaborn
+2. Configure a python environment
+    - Option 1 (Recommended) 
+        
+        Manually create and configure a python (recommended version v3.7+) virtual environment and install the following packages `torch, matplotlib, seaborn, h5py`.
 
-[Option 2] 
+        An example using [conda](https://docs.anaconda.com/anaconda/install/):
 
-- For [conda](https://docs.anaconda.com/anaconda/install/) users, create an environment using
+          conda create --name duovae python=3.9 matplotlib seaborn h5py
+          conda activate duovae
+          # Then, install pytorch
 
-      conda env create -f environment.yml
+    - Option 2
+        - For [conda](https://docs.anaconda.com/anaconda/install/) users, create an environment using `conda env create -f environment.yml`
+        - For [pip](https://pip.pypa.io/en/stable/installation/) users, create an environment using `pip install -r requirements.txt`
+        
+    - Common
+        - In the configured environment, install [PyTorch](https://pytorch.org/get-started/locally/) (tested versions: 1.12.x, 1.
+        13.x) with either CPU, CUDA, or MPS supports.
 
-- For [pip](https://pip.pypa.io/en/stable/installation/) users, create an environment using
-
-      pip install -r requirements.txt
-    
-- Then, install [PyTorch](https://pytorch.org/get-started/locally/) (tested versions: 1.12.x, 1.13.x) with either CPU, CUDA, or MPS supports.
+--- 
 ## Run
 
 ### Train
@@ -35,12 +46,14 @@ Command format is `python train.py <model-name> <dataset-type>`.
 - `<model-name>`: `duovae` to use DuoVAE (ours), `pcvae` to use [PCVAE](https://github.com/xguo7/PCVAE) (for comparisons)
 - `<dataset-type>`: `2d` to use [dSprites](https://github.com/deepmind/dsprites-dataset), `3d` to use [3dshapes](https://github.com/deepmind/3d-shapes)
 
-Additional parameters can be configured in `parameters_default.json`.
+Additional parameters can be configured in `parameters.json`.
 
-### Test
+--- 
+## Test
 
 (coming)
 
+--- 
 ### Evaluation results
 
 #### 1. Property-controlled image generations
@@ -75,12 +88,20 @@ In the ideal case, the heatmaps of MI between each property and latent variable 
 It is possible to have very high MI scores but poor reconstructions. Therefore, we traverse the latent variables to test whether the latent variables are smooth and disentangled.
 
 `dSprites` dataset with property $(y_1, y_2, y_3)$=(scale, $x$ position, $y$ position).
+
 ![figure](/figures/zw_traverse_dsprites_duovae.png)
 
 `3dshapes` dataset with property $(y_1, y_2, y_3)$=(scale, wall color, floor color).
+
 ![figure](/figures/zw_traverse_3dshapes_duovae.png)
 
 Each of the supervised latent variables $\mathbb{w}$ (top 3 rows) captures the information of each property ($y_1$, $y_2$, $y_3$), respectively, whereas the rest of the latent variables $\mathbb{z}$ (bottom 4 rows) appear to have captured the rest of the information in an entangled way.
+
+---
+## Citation
+
+    coming
+---
 
 ## Tested versions
     
