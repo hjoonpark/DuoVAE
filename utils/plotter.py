@@ -68,7 +68,7 @@ def save_MI_score(save_dir, MI, model_name, epoch):
     fs = 10
     W = 2.3
     sns.set()
-    f, ax = plt.subplots(figsize=(W*3/4, W))
+    f, ax = plt.subplots(figsize=(W*4/3, W))
 
     latent_dim, label_dim = MI.shape
     labels = (np.asarray(["{:.4f}".format(abs(score)) for score in MI.flatten()])).reshape(latent_dim, label_dim)

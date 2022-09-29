@@ -1,0 +1,27 @@
+{
+    "train": {
+        "n_epoch": 100000,
+        "batch_size": 1024,
+        "lr": 0.0001,
+        "log_freq": 1,
+        "save_freq": 30
+    },
+    "common": {
+        "z_dim": 4,
+        "w_dim": 3,
+        "x_recon_weight": 0.0001,
+        "y_recon_weight": 1.0,
+        "beta_z": 0.005,
+        "beta_w": 0.005,
+        "hid_channel": 32,
+        "hid_dim_x": 128,
+        "hid_dim_y": 8
+    },
+    "duovae": {
+        "beta_w2": 0.005
+    },
+    "pcvae": {
+        "beta_groupwise": 0.005,
+        "beta_pairwise": 0.005
+    }
+}
