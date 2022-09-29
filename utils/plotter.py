@@ -73,7 +73,10 @@ def save_MI_score(save_dir, MI, model_name, epoch):
     latent_dim, label_dim = MI.shape
     labels = (np.asarray(["{:.4f}".format(abs(score)) for score in MI.flatten()])).reshape(latent_dim, label_dim)
     xticklabels = ["y{}".format(i+1) for i in range(label_dim)]
-    yticklabels = ["z{}".format(i+1) for i in range(latent_dim)]
+    yticklabels = ["z_avg"]
+    for w_idx in range(latent_dim-1):
+        yticklabels.append("w{}".format(w_idx+1))
+
     sns.heatmap(MI, annot=labels, xticklabels=xticklabels, yticklabels=yticklabels, linewidths=1, ax=ax, fmt="", vmin=0, vmax=1, cmap="magma", annot_kws={"fontsize":fs})
     cbar = ax.collections[0].colorbar
     cbar.ax.tick_params(labelsize=fs)
