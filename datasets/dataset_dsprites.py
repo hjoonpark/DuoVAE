@@ -72,7 +72,7 @@ class Dataset2d(torch.utils.data.Dataset):
 
         subset = 1
         if subset:
-            n_samples = 1000
+            n_samples = 100
             def sample_latent(size=1):
                 samples = np.zeros((size, labels_sizes.size))
                 for lat_i, lat_size in enumerate(labels_sizes):

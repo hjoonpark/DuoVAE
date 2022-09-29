@@ -45,7 +45,6 @@ class Dataset3d(torch.utils.data.Dataset):
         url = "https://storage.googleapis.com/3d-shapes/3dshapes.h5"
         file = "3dshapes.h5"
 
-
         # download if not exists
         load_path = os.path.join(load_dir, file)
         self.logger.print("loading dataset from: {}".format(load_path))
@@ -74,7 +73,7 @@ class Dataset3d(torch.utils.data.Dataset):
 
         subset = True
         if subset:
-            n_samples = 1000
+            n_samples = 100
             indices = torch.randperm(len(imgs))[:n_samples]
             imgs = imgs[indices]
             labels = labels[indices]

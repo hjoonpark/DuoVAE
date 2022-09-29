@@ -12,15 +12,14 @@ import math
 
 """
 Code references:
- - https://github.com/xguo7/PCVAE
- - https://github.com/YannDubs/disentangling-vae
+- https://github.com/xguo7/PCVAE
+- https://github.com/YannDubs/disentangling-vae
 """
 class PcVAE(nn.Module):
-    def __init__(self, params, is_train, logger=None):
+    def __init__(self, params, is_train, logger):
         super().__init__()
 
-        self.device, self.gpu_ids = get_available_devices()
-        logger.print("Devices: {}, GPU Ids: {}".format(self.device, self.gpu_ids))
+        self.device, self.gpu_ids = get_available_devices(logger)
 
         # parameters
         lr = params["train"]["lr"]
@@ -34,8 +33,8 @@ class PcVAE(nn.Module):
         self.x_recon_weight = params["common"]["x_recon_weight"]
         self.y_recon_weight = params["common"]["y_recon_weight"]
         self.beta = (params["common"]["beta_z"] + params["common"]["beta_w"])*0.5
-        self.beta_groupwise = params["pc_vae"]["beta_groupwise"]
-        self.beta_pairwise = params["pc_vae"]["beta_pairwise"]
+        self.beta_groupwise = params["pcvae"]["beta_groupwise"]
+        self.beta_pairwise = params["pcvae"]["beta_pairwise"]
 
         # parameters
         self.encoder = torch.nn.DataParallel(Encoder(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
@@ -122,7 +121,7 @@ class PcVAE(nn.Module):
         w_n=label.view(-1,1).to(self.device).float() # [N]
         for iter_index in range(maxIter):
             summand = self.decoder.module.property_lin_list[w_latent_idx](w_n)
-            w_n1 = label.view(-1,1).to('cuda').float() - summand
+            w_n1 = label.view(-1,1).to(self.device).float() - summand
             w_n = w_n1.clone()
         return w_n1.view(-1) 
         
@@ -139,9 +138,10 @@ class PcVAE(nn.Module):
         for y_idx in range(len(y_mins)):
             x_recons = None
             for a in unit_range:
-                y_new = torch.clone(self.y[[0]])
+                y_new = torch.clone(self.y[[0]]).cpu() # had to move to cpu for some internal bug in the next line (Apple silicon-related)
                 y_new[0, y_idx] = y_mins[y_idx]*(1.0-a) + y_maxs[y_idx]*a
-                
+                y_new = y_new.to(self.device)
+
                 # decode
                 w = self.iterate_get_w(label=y_new, w_latent_idx=y_idx)[None, :]
                 _, x_recon, _ = self.decoder(z, w)

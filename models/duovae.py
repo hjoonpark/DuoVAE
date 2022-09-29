@@ -10,11 +10,10 @@ from utils.logger import LogLevel
 from utils.util_io import as_np
 
 class DuoVAE(nn.Module):
-    def __init__(self, params, is_train, logger=None):
+    def __init__(self, params, is_train, logger):
         super().__init__()
 
-        self.device, self.gpu_ids = get_available_devices()
-        logger.print("Devices: {}, GPU Ids: {}".format(self.device, self.gpu_ids))
+        self.device, self.gpu_ids = get_available_devices(logger)
 
         # parameters
         lr = params["train"]["lr"]
@@ -29,7 +28,7 @@ class DuoVAE(nn.Module):
         self.y_recon_weight = params["common"]["y_recon_weight"]
         self.beta_z = params["common"]["beta_z"]
         self.beta_w = params["common"]["beta_w"]
-        self.beta_w2 = params["duo_vae"]["beta_w2"]
+        self.beta_w2 = params["duovae"]["beta_w2"]
 
         # define models
         self.encoder_x = torch.nn.DataParallel(EncoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
@@ -146,9 +145,10 @@ class DuoVAE(nn.Module):
         for y_idx in range(len(y_mins)):
             x_recons = None
             for a in unit_range:
-                y_new = torch.clone(self.y[[0]])
-                y_new[0, y_idx] = y_mins[y_idx]*(1.0-a) + y_maxs[y_idx]*a
-                
+                y_new = torch.clone(self.y[[0]]).cpu() # had to move to cpu for some internal bug in the next line (Apple silicon-related)
+                y_new[0, y_idx] = y_mins[y_idx]*(1-a) + y_maxs[y_idx]*a
+                y_new = y_new.to(self.device)
+
                 # decode
                 w, _ = self.encoder_y(y_new)
                 _, x_recon = self.decoder_x(z, w)

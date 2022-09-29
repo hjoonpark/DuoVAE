@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch.distributions as dist
 from utils.util_io import as_np
-from tqdm import tqdm
 from utils.logger import Logger, LogLevel
 
 class View(nn.Module):
@@ -16,18 +15,35 @@ class View(nn.Module):
     def forward(self, x):
         return x.view(*self.shape)
 
-def get_available_devices():
+def get_available_devices(logger):
     """
     loads whichever available GPUs/CPU
     """
     gpu_ids = []
+    device = "cpu"
     if torch.cuda.is_available():
+        logger.print("CUDA is available")
         torch.cuda.empty_cache()
         n_gpu = torch.cuda.device_count()
         
         gpu_ids = [i for i in range(n_gpu)]
-    
-    device = torch.device('cuda:0' if (torch.cuda.is_available() and len(gpu_ids) > 0) else torch.device('cpu'))
+        device = "cuda:0"
+    else:
+        """
+        support for arm64 MacOS
+        https://pytorch.org/blog/introducing-accelerated-pytorch-training-on-mac/
+        """
+        # this ensures that the current MacOS version is at least 12.3+
+        logger.print("CUDA is not available")
+        if torch.backends.mps.is_available():
+            logger.print("Apple silicon (arm64) is available")
+            # this ensures that the current PyTorch installation was built with MPS activated.
+            device = "mps:0"
+            gpu_ids.append(0) # (2022) There is no multi-MPS Apple device, yet
+            if not torch.backends.mps.is_built():
+                logger.print("Current PyTorch installation was not built with MPS activated. Using cpu instead.")
+                device = "cpu"
+
     return device, gpu_ids
 
 def reparameterize(mean, logvar, sample):
@@ -87,7 +103,6 @@ def save_mutual_information(dataloader, model):
     W = None
     labels = None
     with torch.no_grad():
-        pbar = tqdm(total=len(dataloader))
         for data in dataloader:
             x = data["x"].to(model.device)
             y = data["y"].to(model.device)
@@ -97,8 +112,6 @@ def save_mutual_information(dataloader, model):
             Z = as_np(z) if Z is None else np.concatenate((Z, as_np(z)), axis=0)
             W = as_np(w) if W is None else np.concatenate((W, as_np(w)), axis=0)
             labels = as_np(y) if labels is None else np.concatenate((labels, as_np(y)), axis=0)
-            pbar.update(1)
-        pbar.close()
 
     latents = np.concatenate((Z, W), axis=1)
     MI_score = _compute_MI_score(latents, labels)

@@ -3,8 +3,8 @@ import json
 import argparse
 import shutil
 
-from models.duo_vae import DuoVAE
-from models.pc_vae import PcVAE
+from models.duovae import DuoVAE
+from models.pcvae import PcVAE
 
 from datasets.dataset_dsprites import Dataset2d
 from datasets.dataset_3dshapes import Dataset3d
@@ -13,54 +13,31 @@ from utils.util_io import make_directories
 from utils.plotter import save_image, save_reconstructions, save_losses, save_MI_score
 from utils.util_model import load_model, save_model, save_mutual_information
 import torch
+import numpy as np
 
-MODELS_SUPPORTED = set(["duo_vae", "pc_vae"])
-def load_parameters(model_name, save_path=None):
+MODELS_SUPPORTED = set(["duovae", "pcvae"])
+def load_parameters(model_name, save_dir):
+    # load parameters from .json file
+    params = json.load(open("parameters_default.json", "r"))
 
-    params = {
-        "train":
-        {
-            "n_epoch": 100,
-            "batch_size": 1024,
-            "lr": 0.0001,
-            "log_freq": 1,
-            "save_freq": 30,
-        },
-        "common":
-        {
-            "z_dim": 4,
-            "w_dim": 3,
-            "x_recon_weight": 0.001,
-            "y_recon_weight": 1.0,
-            "beta_z": 0.005,
-            "beta_w": 0.005,
-            "hid_channel": 32,
-            "hid_dim_x": 128,
-            "hid_dim_y": 8,
-        },
-        "duo_vae":
-        {
-            "beta_w2": 0.005
-        },
-        "pc_vae":
-        {
-            "beta_groupwise": 0.005,
-            "beta_pairwise": 0.005
-        }
-    }
-    if save_path is not None:
-        # keep a record of the parameters for later references
-        json.dump(params, open(save_path, "w+"), indent=4)
+    # keep a record of the parameters for later references
+    save_path = os.path.join(save_dir, "parameters.json")
+    json.dump(params, open(save_path, "w+"), indent=4)
     return params
+
+def set_all_seeds(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 if __name__ == "__main__":
     # for reproducibility
-    torch.manual_seed(0)
+    set_all_seeds(0)
 
     # parse input arguments
     description = "PyTorch implementation of DuoVAE"
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("model", type=str, help="Model: duo_vae, pc_vae", default="duo_vae")
+    parser.add_argument("model", type=str, help="Model: duovae, pcvae", default="duovae")
     parser.add_argument("dataset", type=str, help="Dataset: 2d, 3d", default="2d")
     args = parser.parse_args()
 
@@ -81,7 +58,7 @@ if __name__ == "__main__":
     logger.print("===========================")
 
     # load parameters
-    params = load_parameters(model_name=model_name, save_path=os.path.join(dirs["log"], "parameters.json"))
+    params = load_parameters(model_name=model_name, save_dir=os.path.join(dirs["log"]))
 
     # load dataset
     if dataset_name == "2d":
@@ -94,21 +71,22 @@ if __name__ == "__main__":
     dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, batch_size=params["train"]["batch_size"])
 
     # init models
-    if model_name == "duo_vae":
+    if model_name == "duovae":
         model = DuoVAE(params=params, is_train=True, logger=logger)
-    elif model_name == "pc_vae":
+    elif model_name == "pcvae":
         model = PcVAE(params=params, is_train=True, logger=logger)
     else:
         logger.print("Invalid model name", level=LogLevel.ERROR.name)
         sys.exit()
     logger.print(model)
+    logger.print("Devices: {}, GPU Ids: {}".format(model.device, model.gpu_ids))
 
     # make a copy of the model to reference later
     shutil.copyfile("models/{}.py".format(model_name), os.path.join(dirs["model"], "{}.py".format(model_name)))
 
     """
     # To continue training from a saved checkpoint, set load_dir to a directory containing *.pt files   
-    # example: load_dir = "/output/duo_vae/2d/model/02000/"
+    # example: load_dir = "/output/duovae/2d/model/02000/"
     """
     load_dir = None
     if load_dir is not None:
