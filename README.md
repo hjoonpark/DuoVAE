@@ -24,9 +24,7 @@
 
       pip install -r requirements.txt
     
-    *using `pip` is not thoroughly tested.*
-
-- Then, install [PyTorch](https://pytorch.org/get-started/locally/) (tested versions: 1.12.x, 1.13.x) with either CPU/CUDA/MPS supports.
+- Then, install [PyTorch](https://pytorch.org/get-started/locally/) (tested versions: 1.12.x, 1.13.x) with either CPU, CUDA, or MPS supports.
 ## Run
 
 ### Train
@@ -34,8 +32,8 @@
     python train.py duovae 2d
 
 Command format is `python train.py <model-name> <dataset-type>`.
-- `<model-name>`: `duovae`: DuoVAE (ours), `pcvae`: [PCVAE](https://github.com/xguo7/PCVAE) (for comparisons)
-- `<dataset-type>` `2d`: [dSprites](https://github.com/deepmind/dsprites-dataset), `3d`: [3dshapes](https://github.com/deepmind/3d-shapes)
+- `<model-name>`: `duovae` to use DuoVAE (ours), `pcvae` to use [PCVAE](https://github.com/xguo7/PCVAE) (for comparisons)
+- `<dataset-type>`: `2d` to use [dSprites](https://github.com/deepmind/dsprites-dataset), `3d` to use [3dshapes](https://github.com/deepmind/3d-shapes)
 
 Additional parameters can be configured in `parameters_default.json`.
 

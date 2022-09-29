@@ -38,7 +38,7 @@ class DuoVAE(nn.Module):
         self.model_names = ["encoder_x", "decoder_x", "encoder_y", "decoder_y"]
 
         if is_train:
-            params_x = itertools.chain(self.encoder_x.parameters(), self.decoder_x.parameters())
+            params_x = itertools.chain(self.encoder_x.parameters(), self.decoder_x.parameters(), self.decoder_y.parameters())
             params_y = itertools.chain(self.encoder_y.parameters(), self.decoder_y.parameters())
 
             self.optimizer_x = torch.optim.Adam(params_x, lr=lr)
@@ -52,6 +52,9 @@ class DuoVAE(nn.Module):
         # encode
         (z_mean, w_mean), (z_logvar, w_logvar) = self.encoder_x(x)
         # sample w, z
+        # print("Z:", z_mean.shape, z_mean.min().item(), z_mean.max().item(), z_logvar.shape, z_logvar.min().item(), z_logvar.max().item())
+        # print("W:", w_mean.shape, w_mean.min().item(), w_mean.max().item(), w_logvar.shape, w_logvar.min().item(), w_logvar.max().item())
+        # print()
         z, Qz = reparameterize(z_mean, z_logvar, sample)
         w, Qw = reparameterize(w_mean, w_logvar, sample)
         
@@ -83,7 +86,8 @@ class DuoVAE(nn.Module):
         with torch.no_grad():
             # no backpropagation on the encoder q(y|w) in this step
             w_mean, w_logvar = self.encoder_y(self.y)
-            Pw = dist.Normal(w_mean, torch.sqrt(torch.exp(w_logvar)))
+            w_std = torch.sqrt(torch.exp(w_logvar.detach()))
+            Pw = dist.Normal(w_mean.detach(), w_std)
         self.loss_kl_div_w = self.beta_w*kl_divergence(Qw, Pw) / batch_size
 
         loss = self.loss_x_recon + self.loss_y_recon \
@@ -116,10 +120,12 @@ class DuoVAE(nn.Module):
         loss.backward()
 
     def optimize_parameters(self):
+        # main VAE
         self.optimizer_x.zero_grad()
         self.backward_x()
         self.optimizer_x.step()
         
+        # auxiliary VAE
         self.optimizer_y.zero_grad()
         self.backward_y()
         self.optimizer_y.step()
@@ -158,7 +164,7 @@ class DuoVAE(nn.Module):
         return x_recons_all
             
 """
-Encoder q(z,w|x): Encode input x to latent variabless (z, w)
+Encoder q(z,w|x): Encode input x to latent variables (z, w)
 """  
 class EncoderX(nn.Module):
     def __init__(self, img_channel, hid_channel, hid_dim, z_dim, w_dim):
@@ -180,7 +186,7 @@ class EncoderX(nn.Module):
             nn.ReLU(),
             nn.Linear(hid_dim, hid_dim),
             nn.ReLU(),
-            nn.Linear(hid_dim, (z_dim+w_dim) * 2)
+            nn.Linear(hid_dim, 2*(z_dim+w_dim)),
         )
 
     def forward(self, x):
@@ -197,7 +203,7 @@ class EncoderX(nn.Module):
         return (z_mean, w_mean), (z_logvar, w_logvar)
 
 """
-Decoder p(x|z,w): Recontruct input x from latent variabless (z, w)
+Decoder p(x|z,w): Recontruct input x from latent variables (z, w)
 """  
 class DecoderX(nn.Module):
     def __init__(self, img_channel, hid_channel, hid_dim, z_dim, w_dim):
@@ -232,7 +238,7 @@ class DecoderX(nn.Module):
         return x_logits, x_recon
 
 """
-Encoder q(w|y): Recontruct input y from latent variabless w
+Encoder q(w|y): Recontruct input y from latent variables w
 """  
 class EncoderY(nn.Module):
     def __init__(self, y_dim, hid_dim, w_dim):
@@ -244,7 +250,7 @@ class EncoderY(nn.Module):
             self.encoder.append(nn.Sequential(
                 nn.Linear(1, hid_dim),
                 nn.ReLU(),
-                nn.Linear(hid_dim, 2),
+                nn.Linear(hid_dim, 2)
             ))
 
     def forward(self, y):
@@ -261,7 +267,7 @@ class EncoderY(nn.Module):
         return mu, logvar
 
 """
-Decoder p(y|w): Recontruct input y from latent variabless w
+Decoder p(y|w): Recontruct input y from latent variables w
 """  
 class DecoderY(nn.Module):
     def __init__(self, y_dim, hid_dim, w_dim):

@@ -6,8 +6,7 @@ import shutil
 from models.duovae import DuoVAE
 from models.pcvae import PcVAE
 
-from datasets.dataset_dsprites import Dataset2d
-from datasets.dataset_3dshapes import Dataset3d
+from datasets.benchmark_datasets import BenchmarkDataset
 from utils.logger import Logger, LogLevel
 from utils.util_io import make_directories
 from utils.plotter import save_image, save_reconstructions, save_losses, save_MI_score
@@ -16,11 +15,13 @@ import torch
 import numpy as np
 
 MODELS_SUPPORTED = set(["duovae", "pcvae"])
+DATASETS_SUPPORTED = set(["2d", "3d"])
+
 def load_parameters(model_name, save_dir):
     # load parameters from .json file
-    params = json.load(open("parameters_default.json", "r"))
+    params = json.load(open("parameters.json", "r"))
 
-    # keep a record of the parameters for later references
+    # keep a record of the parameters for future reference
     save_path = os.path.join(save_dir, "parameters.json")
     json.dump(params, open(save_path, "w+"), indent=4)
     return params
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     # for reproducibility
     set_all_seeds(0)
 
-    # parse input arguments
+    # parse input arguments: two inputs are required <model_name> and <dataset_type>
     description = "PyTorch implementation of DuoVAE"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("model", type=str, help="Model: duovae, pcvae", default="duovae")
@@ -44,31 +45,28 @@ if __name__ == "__main__":
     model_name = args.model
     dataset_name = args.dataset
 
-    # safe-guard model name
+    # safe-guard parsed input arguments
     assert model_name in MODELS_SUPPORTED, "[ERROR] model_name={} is not supported! Chooose from {}".format(model_name, MODELS_SUPPORTED)
+    assert dataset_name in DATASETS_SUPPORTED, "[ERROR] dataset_name={} is not supported! Chooose from {}".format(dataset_name, DATASETS_SUPPORTED)
 
     # make output directories
     dirs = make_directories(root_dir=os.path.join("output", model_name, dataset_name), sub_dirs=["log", "model", "visualization"])
 
-    # init helper classes
+    # init helper class
     logger = Logger(save_path=os.path.join(dirs["log"], "log.txt"))
-    logger.print("========== START ==========")
+    logger.print("=============== START ===============")
     logger.print("  model  : {}".format(model_name))
     logger.print("  dataset: {}".format(dataset_name))
-    logger.print("===========================")
+    logger.print("=====================================")
 
     # load parameters
     params = load_parameters(model_name=model_name, save_dir=os.path.join(dirs["log"]))
 
     # load dataset
-    if dataset_name == "2d":
-        dataset = Dataset2d(logger)
-    else:
-        dataset = Dataset3d(logger)
-        
+    dataset = BenchmarkDataset(dataset_name=dataset_name, logger=logger)
+    dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, batch_size=params["train"]["batch_size"])
     params["common"]["img_channel"] = dataset.img_channel
     params["common"]["y_dim"] = dataset.labels.shape[-1]
-    dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, batch_size=params["train"]["batch_size"])
 
     # init models
     if model_name == "duovae":
@@ -76,12 +74,14 @@ if __name__ == "__main__":
     elif model_name == "pcvae":
         model = PcVAE(params=params, is_train=True, logger=logger)
     else:
-        logger.print("Invalid model name", level=LogLevel.ERROR.name)
-        sys.exit()
-    logger.print(model)
-    logger.print("Devices: {}, GPU Ids: {}".format(model.device, model.gpu_ids))
+        raise NotImplementedError("Only duovae and pcvae models are supported.")
 
-    # make a copy of the model to reference later
+    # log model information
+    logger.print(model)
+    logger.print("Device={}, GPU Ids={}".format(model.device, model.gpu_ids))
+    logger.print("Training on {:,} number of data".format(len(dataset)))
+
+    # make a copy of the model to future reference
     shutil.copyfile(os.path.join("models", "{}.py".format(model_name)), os.path.join(dirs["model"], "{}.py".format(model_name)))
 
     """
@@ -109,9 +109,9 @@ if __name__ == "__main__":
             model.optimize_parameters()
 
             # ------------------------------- #
-            # below for plots
+            # below are all for plots
             # ------------------------------- #
-            # keep loss values
+            # keep track of loss values
             losses = model.get_losses()
             for loss_name, loss_val in losses.items():
                 if loss_name not in losses_curr_epoch:
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                 save_path = save_reconstructions(save_dir=dirs["log"], model=model, epoch=epoch)
                 logger.print("train recontructions saved: {}".format(save_path))
         
-        # keep losses
+        # keep track of loss values
         for loss_name, loss_val in losses_curr_epoch.items():
             if loss_name not in losses_all:
                 losses_all[loss_name] = []
@@ -137,7 +137,7 @@ if __name__ == "__main__":
             logger.print(loss_str)
             
         # checkpoint every certain epochs
-        if epoch % params["train"]["save_freq"] == 0:
+        if epoch > 0 and epoch % params["train"]["save_freq"] == 0:
             model.eval()
             with torch.no_grad():
                 # save loss plot

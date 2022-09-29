@@ -18,7 +18,7 @@
         "hid_dim_y": 8
     },
     "duovae": {
-        "beta_w2": 0.005
+        "beta_w2": 0.05
     },
     "pcvae": {
         "beta_groupwise": 0.005,

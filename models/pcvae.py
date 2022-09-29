@@ -44,7 +44,7 @@ class PcVAE(nn.Module):
         if is_train:
             params = itertools.chain(self.encoder.parameters(), self.decoder.parameters())
             self.optimizer = torch.optim.Adam(params, lr=lr)
-
+    
     def set_input(self, data):
         self.x = data['x'].to(self.device) # (B, img_channel, 64, 64)
         self.y = data['y'].to(self.device) # (B, y_dim)

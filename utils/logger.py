@@ -11,6 +11,9 @@ class LogLevel(Enum):
     ERROR = 3
 
 class Logger():
+    """
+    simple logger that keeps appending strings to a .txt file
+    """
     def __init__(self, save_path):
         self.save_path = save_path
         self.time0 = None
