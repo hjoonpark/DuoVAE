@@ -4,8 +4,8 @@ channels:
   - defaults
   - conda-forge
 dependencies:
+  - python=3.9.13
   - h5py
   - matplotlib
   - numpy
-  - python=3.9.13
   - seaborn

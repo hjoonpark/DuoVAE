@@ -5,7 +5,6 @@ import numpy as np
 import h5py
 import urllib.request
 
-
 class Dataset3d(torch.utils.data.Dataset):
     """
     https://github.com/deepmind/3d-shapes

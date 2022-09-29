@@ -82,7 +82,7 @@ if __name__ == "__main__":
     logger.print("Devices: {}, GPU Ids: {}".format(model.device, model.gpu_ids))
 
     # make a copy of the model to reference later
-    shutil.copyfile("models/{}.py".format(model_name), os.path.join(dirs["model"], "{}.py".format(model_name)))
+    shutil.copyfile(os.path.join("models", "{}.py".format(model_name)), os.path.join(dirs["model"], "{}.py".format(model_name)))
 
     """
     # To continue training from a saved checkpoint, set load_dir to a directory containing *.pt files   
