@@ -33,6 +33,8 @@ Command format is `python train.py <model-name> <dataset-type>`.
 
 Additional parameters can be configured in `parameters.json`.
 
+More command examples can be found [here](run.sh).
+
 ### Test
 
 (coming)
