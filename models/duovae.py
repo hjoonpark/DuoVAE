@@ -21,7 +21,7 @@ class DuoVAE(nn.Module):
         hid_channel = params["common"]["hid_channel"]
         hid_dim_x = params["common"]["hid_dim_x"]
         hid_dim_y = params["common"]["hid_dim_y"]
-        img_channel = params["common"]["img_channel"]
+        self.img_channel = params["common"]["img_channel"]
         self.y_dim = params["common"]["y_dim"]
         self.x_recon_weight = params["common"]["x_recon_weight"]
         self.y_recon_weight = params["common"]["y_recon_weight"]
@@ -30,8 +30,8 @@ class DuoVAE(nn.Module):
         self.beta_w2 = params["duovae"]["beta_w2"]
 
         # define models
-        self.encoder_x = torch.nn.DataParallel(EncoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
-        self.decoder_x = torch.nn.DataParallel(DecoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
+        self.encoder_x = torch.nn.DataParallel(EncoderX(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
+        self.decoder_x = torch.nn.DataParallel(DecoderX(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
         self.encoder_y = torch.nn.DataParallel(EncoderY(self.y_dim, hid_dim_y, w_dim)).to(self.device)
         self.decoder_y = torch.nn.DataParallel(DecoderY(self.y_dim, hid_dim_y, w_dim)).to(self.device)
 
@@ -47,15 +47,6 @@ class DuoVAE(nn.Module):
 
             self.optimizer_x = torch.optim.Adam(params_x, lr=lr)
             self.optimizer_y = torch.optim.Adam(params_y, lr=lr)
-
-            if img_channel == 1:
-                # (assumes binary image) white pixel = class 1, black pixel = class 0
-                self.criteria_recon = nn.BCEWithLogitsLoss(reduction="sum")
-            elif img_channel == 3:
-                # continuous pixel values in [0, 1]
-                self.criteria_recon = nn.L1Loss(reduction="sum")
-            else:
-                raise NotImplementedError("Only grayscale and RGB images are supported.")
 
     def set_input(self, data):
         self.x = data['x'].to(self.device) # (B, img_channel, 64, 64)
@@ -101,8 +92,14 @@ class DuoVAE(nn.Module):
         # losses
         # * reconstruction losses are rescaled w.r.t. image and label dimensions so that hyperparameters are easier to tune and consistent regardless of their dimensions.
         batch_size, _, h, w = self.x.shape
+        
+        if self.img_channel == 1:
+            # treat black pixel as class 0 and white pixel as class 1
+            self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="sum") / (batch_size*h*w)
+        else: 
+            # RGB images
+            self.loss_x_recon = self.x_recon_weight*F.l1_loss(self.x_recon, self.x, reduction="sum") / (batch_size*h*w)
 
-        self.loss_x_recon = self.x_recon_weight*self.criteria_recon(x_logits, self.x) / (batch_size*h*w)
         self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
 
         Pz = dist.Normal(torch.zeros_like(self.z), torch.ones_like(self.z))

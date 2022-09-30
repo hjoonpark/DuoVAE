@@ -27,7 +27,7 @@ class PcVAE(nn.Module):
         hid_channel = params["common"]["hid_channel"]
         hid_dim_x = params["common"]["hid_dim_x"]
         hid_dim_y = params["common"]["hid_dim_y"]
-        img_channel = params["common"]["img_channel"]
+        self.img_channel = params["common"]["img_channel"]
         self.y_dim = params["common"]["y_dim"]
         self.x_recon_weight = params["common"]["x_recon_weight"]
         self.y_recon_weight = params["common"]["y_recon_weight"]
@@ -36,8 +36,8 @@ class PcVAE(nn.Module):
         self.beta_pairwise = params["pcvae"]["beta_pairwise"]
 
         # define models
-        self.encoder = torch.nn.DataParallel(Encoder(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
-        self.decoder = torch.nn.DataParallel(Decoder(img_channel, hid_channel, hid_dim_x, z_dim, w_dim, self.y_dim, hid_dim_y)).to(self.device)
+        self.encoder = torch.nn.DataParallel(Encoder(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
+        self.decoder = torch.nn.DataParallel(Decoder(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim, self.y_dim, hid_dim_y)).to(self.device)
         
         # used by util.model to save/load model
         self.model_names = ["encoder", "decoder"]
@@ -48,15 +48,6 @@ class PcVAE(nn.Module):
         if is_train:
             params = itertools.chain(self.encoder.parameters(), self.decoder.parameters())
             self.optimizer = torch.optim.Adam(params, lr=lr)
-    
-            if img_channel == 1:
-                # (assumes binary image) white pixel = class 1, black pixel = class 0
-                self.criteria_recon = nn.BCEWithLogitsLoss(reduction="sum")
-            elif img_channel == 3:
-                # continuous pixel values in [0, 1]
-                self.criteria_recon = nn.L1Loss(reduction="sum")
-            else:
-                raise NotImplementedError("Only grayscale and RGB images are supported.")
 
     def set_input(self, data):
         self.x = data['x'].to(self.device) # (B, img_channel, 64, 64)
@@ -84,7 +75,12 @@ class PcVAE(nn.Module):
         # * reconstruction losses are rescaled w.r.t. image and label dimensions so that hyperparameters are easier to tune and consistent regardless of their dimensions.
         # https://github.com/xguo7/PCVAE/blob/dd85743c148b86dd2b583cb074b819f51d6b7a48/disvae/models/losses.py#L676
         batch_size, _, h, w = self.x.shape
-        self.loss_x_recon = self.x_recon_weight*self.criteria_recon(x_logits, self.x, reduction="sum") / (batch_size*h*w)
+        if self.img_channel == 1:
+            # treat black pixel as class 0 and white pixel as class 1
+            self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="sum") / (batch_size*h*w)
+        else: 
+            # RGB images
+            self.loss_x_recon = self.x_recon_weight*F.l1_loss(self.x_recon, self.x, reduction="sum") / (batch_size*h*w)
         self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
 
         Pz = dist.Normal(torch.zeros_like(self.z), torch.ones_like(self.z))
