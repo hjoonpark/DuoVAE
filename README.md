@@ -4,13 +4,14 @@
 
 **DuoVAE**: [Paper]() | [Project]()
 
-(Image)
+![duovae](/figures/duovae_all.gif)
 
 ## Prerequisites
 - Linux, MacOS, Windows
 - CPU, CUDA, MPS (arm64 Apple silicon)
 
   (*MPS is supported for MacOS 12.3+, but could be unstable currently - September 2022*)
+
 ## Installation
 
 1. Clone this repo: `git clone https://github.com/hjoonpark/DuoVAE.git`
@@ -18,7 +19,7 @@
 2. Configure a python environment
     - Option 1 (Recommended) 
         
-        Manually create and configure a python (recommended version 3.7+) virtual environment and install the following packages `torch, matplotlib, seaborn, h5py`.
+        Manually create and configure a python (recommended version 3.7+) virtual environment and install the following packages `matplotlib`, `seaborn`, `h5py`.
 
         An example using [conda](https://docs.anaconda.com/anaconda/install/):
 
@@ -53,7 +54,8 @@ Additional parameters can be configured in `parameters.json`.
 
 ### 1. Property-controlled image generations
 
-`dSprites` dataset
+**dSprites** dataset
+
 ![figure](/figures/y_traverse_dsprites_duovae.png)
 
 The controlled properties (from left to right in each row) are 
@@ -61,7 +63,8 @@ The controlled properties (from left to right in each row) are
 - $y_2$: $x$ position of a shape $\rightarrow$ from left to right,
 - $y_3$: $y$ position of a shape $\rightarrow$ from top to bottom.
 
-`3dshapes` dataset
+**3dshapes** dataset
+
 ![figure](/figures/y_traverse_3dshapes_duovae.png)
 The controlled properties (from left to right in each row) are 
 - $y_1$: scale of a shape $\rightarrow$ from small to large,
@@ -69,26 +72,27 @@ The controlled properties (from left to right in each row) are
 - $y_3$: floor color $\rightarrow$ from red to violet.
 
 ### 2. Normalized mutual information (MI)
+
 The [mutual information](https://en.wikipedia.org/wiki/Mutual_information) of two random variables quantifies the amount of information (in units such as shannons (bits) or nats) obtained about one random variable by observing the other random variable.
 In the ideal case, the heatmaps of normalized MI between each of the properties and latent variables should be 1 in the diagonal values and 0 in the off-diagonal values as well as for $\mathbf{z}_{avg}$ (average MI of all latent variables $z_i\in\mathbf{z}$), indicating perfect correlations where each property $y_i$ is completely inferred by one supervised latent variable $w_i$.
 
-`dSprites` dataset
+**dSprites** dataset
 
 ![figure](/figures/MI_duovae_2d.png)
 
-`3dshapes` dataset
+**3dshapes** dataset
 
 ![figure](/figures/MI_duovae_3d.png)
 
 ### 3. Latent variable traverse
 
-It is possible to have a very high MI score but with very poor reconstructions. Therefore, we visualize the reconstructions when traversing the latent variables to validate whether latent representation spaces are smooth and disentangled.
+It is possible to have a very high MI score but with very poor reconstructions. Therefore, we visualize the reconstructions when traversing the latent variables to validate whether the latent representation spaces are smooth and disentangled.
 
-`dSprites` dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, $x$ position, $y$ position), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
+**dSprites** dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, $x$ position, $y$ position), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
 
 ![figure](/figures/zw_traverse_dsprites_duovae.png)
 
-`3dshapes` dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, wall color, floor color), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
+**3dshapes** dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, wall color, floor color), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
 
 ![figure](/figures/zw_traverse_3dshapes_duovae.png)
 
