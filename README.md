@@ -96,7 +96,7 @@ It is possible to have a very high MI score but with very poor reconstructions. 
 
 ![figure](/figures/zw_traverse_3dshapes_duovae.png)
 
-Each of the supervised latent variables $\mathbb{w}$ (top 3 rows) captures the information of each property ($y_1$, $y_2$, $y_3$), respectively, whereas the rest of the latent variables $\mathbb{z}$ (bottom 4 rows) appear to have captured the rest of the information in an entangled way.
+Each of the supervised latent variables $\mathbf{w}$ (top 3 rows) captures the information of each property $(y_1, y_2, y_3)$, respectively, whereas the rest of the latent variables $\mathbf{z}$ (bottom 4 rows) appear to have captured the rest of the information in an entangled way.
 
 ## Citation
 

@@ -60,7 +60,7 @@ class BenchmarkDataset(torch.utils.data.Dataset):
         load_path = os.path.join(load_dir, file)
         self.logger.print("loading dataset from: {}".format(load_path))
         if not os.path.exists(load_path):
-            self.logger.print("Not exists! Downloading dataset: {}".format(url))
+            self.logger.print("dSprites dataset does not exist! -> downloading: {}".format(url))
             subprocess.check_call(["curl", "-L", url, "--output", load_path])
 
         dataset_zip = np.load(load_path, allow_pickle=True, encoding='latin1')
@@ -132,7 +132,7 @@ class BenchmarkDataset(torch.utils.data.Dataset):
         load_path = os.path.join(load_dir, file)
         self.logger.print("loading dataset from: {}".format(load_path))
         if not os.path.exists(load_path):
-            self.logger.print("Not exists! Downloading dataset: {}".format(url))
+            self.logger.print("3dshapes dataset does not exist! -> downloading: {}".format(url))
             subprocess.check_call(["curl", "-L", url, "--output", load_path])
 
         dataset = h5py.File(load_path, "r")
