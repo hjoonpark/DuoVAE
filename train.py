@@ -78,6 +78,7 @@ if __name__ == "__main__":
 
     # log model information
     logger.print(model)
+    logger.print(params)
     logger.print("Device={}, GPU Ids={}".format(model.device, model.gpu_ids))
     logger.print("Training on {:,} number of data".format(len(dataset)))
 
@@ -130,14 +131,15 @@ if __name__ == "__main__":
             losses_all[loss_name].append(loss_val)
 
         # log every certain epochs
-        if epoch % params["train"]["log_freq"] == 0:
+        do_initial_checks = ((epoch > 0 and epoch <= 50) and (epoch % 10 == 0))
+        if do_initial_checks or (epoch % params["train"]["log_freq"] == 0):
             loss_str = "epoch({}/{}) losses: ".format(epoch, params["train"]["n_epoch"])
             for loss_name, loss_vals in losses_all.items():
                 loss_str += "{}({:.4f}) ".format(loss_name, loss_vals[-1])
             logger.print(loss_str)
             
         # checkpoint every certain epochs
-        if epoch > 0 and epoch % params["train"]["save_freq"] == 0:
+        if do_initial_checks or (epoch > 0 and epoch % params["train"]["save_freq"] == 0):
             model.eval()
             with torch.no_grad():
                 # save loss plot

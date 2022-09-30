@@ -4,7 +4,7 @@
         "batch_size": 1024,
         "lr": 0.0001,
         "log_freq": 1,
-        "save_freq": 25
+        "save_freq": 50
     },
     "common": {
         "z_dim": 4,

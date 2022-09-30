@@ -50,10 +50,10 @@ class DuoVAE(nn.Module):
 
             if img_channel == 1:
                 # (assumes binary image) white pixel = class 1, black pixel = class 0
-                self.criteria_recon = nn.BCEWithLogitsLoss(reduce="sum")
+                self.criteria_recon = nn.BCEWithLogitsLoss(reduction="sum")
             elif img_channel == 3:
                 # continuous pixel values in [0, 1]
-                self.criteria_recon = nn.L1Loss(reduce="sum")
+                self.criteria_recon = nn.L1Loss(reduction="sum")
             else:
                 raise NotImplementedError("Only grayscale and RGB images are supported.")
 
