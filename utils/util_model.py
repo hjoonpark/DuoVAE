@@ -106,9 +106,9 @@ def get_losses(model):
     return losses
 
 def traverse_y(model_name, model, x, y, y_mins, y_maxs, n_samples):
-    x = x.model(device)
-    y = y.model(device)
-    
+    x = x.to(model.device)
+    y = y.to(model.device)
+
     unit_range = torch.arange(0, 1+1e-5, 1.0/(n_samples-1))
 
     (z, _), _ = model.encode(x[[0]], sample=False)
