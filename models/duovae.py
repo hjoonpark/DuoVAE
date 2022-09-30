@@ -72,7 +72,11 @@ class DuoVAE(nn.Module):
         z, Qz = reparameterize(z_mean, z_logvar, sample)
         w, Qw = reparameterize(w_mean, w_logvar, sample)
         return (z, w), (Qz, Qw)
-        
+
+    def decode(self, z, w):
+        # alias for decode_x
+        return self.decode_x(z, w)
+                
     def decode_x(self, z, w):
         y_recon = self.decoder_y(w)
         x_logits, x_recon = self.decoder_x(z, w)

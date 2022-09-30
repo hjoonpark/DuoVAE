@@ -134,7 +134,7 @@ def traverse_y(model_name, model, x, y, y_mins, y_maxs, n_samples):
                 raise NotImplementedError("Only duovae and pcvae models are supported.")
 
             # decode: differs by model
-            _, x_recon = self.decoder_x(z, w)
+            _, x_recon, _ = model.decode(z, w)
             x_recons = as_np(x_recon) if x_recons is None else np.concatenate((x_recons, vdivider, as_np(x_recon)), axis=-1)
         x_recons_all = x_recons if x_recons_all is None else np.concatenate((x_recons_all, hdivider, x_recons), axis=2)
     x_recons_all = np.transpose(x_recons_all, (0, 2, 3, 1))
