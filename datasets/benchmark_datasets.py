@@ -43,7 +43,7 @@ class BenchmarkDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.imgs)
 
-    def load_dSprites(self, load_dir, label_indices=[2, 4, 5], subset=True):
+    def load_dSprites(self, load_dir, label_indices=[2, 4, 5], subset=False):
         """
         labels:
             0 Color: white
