@@ -12,7 +12,6 @@ from utils.util_io import as_np
 class DuoVAE(nn.Module):
     def __init__(self, params, is_train, logger):
         super().__init__()
-
         self.device, self.gpu_ids = get_available_devices(logger)
 
         # parameters
@@ -35,7 +34,12 @@ class DuoVAE(nn.Module):
         self.decoder_x = torch.nn.DataParallel(DecoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
         self.encoder_y = torch.nn.DataParallel(EncoderY(self.y_dim, hid_dim_y, w_dim)).to(self.device)
         self.decoder_y = torch.nn.DataParallel(DecoderY(self.y_dim, hid_dim_y, w_dim)).to(self.device)
+
+        # used by util.model to save/load model
         self.model_names = ["encoder_x", "decoder_x", "encoder_y", "decoder_y"]
+
+        # used by util.model to plot losses
+        self.loss_names = ["x_recon", "y_recon", "y_recon2", "kl_div_z", "kl_div_w", "kl_div_w2"]
 
         if is_train:
             params_x = itertools.chain(self.encoder_x.parameters(), self.decoder_x.parameters(), self.decoder_y.parameters())
@@ -44,9 +48,22 @@ class DuoVAE(nn.Module):
             self.optimizer_x = torch.optim.Adam(params_x, lr=lr)
             self.optimizer_y = torch.optim.Adam(params_y, lr=lr)
 
+            if img_channel == 1:
+                # (assumes binary image) white pixel = class 1, black pixel = class 0
+                self.criteria_recon = nn.BCEWithLogitsLoss(reduce="sum")
+            elif img_channel == 3:
+                # continuous pixel values in [0, 1]
+                self.criteria_recon = nn.L1Loss(reduce="sum")
+            else:
+                raise NotImplementedError("Only grayscale and RGB images are supported.")
+
     def set_input(self, data):
         self.x = data['x'].to(self.device) # (B, img_channel, 64, 64)
         self.y = data['y'].to(self.device) # (B, y_dim)
+
+    def encode(self, x, sample: bool):
+        # alias for encode_x
+        return self.encode_x(x, sample)
 
     def encode_x(self, x, sample: bool):
         # encode
@@ -54,17 +71,22 @@ class DuoVAE(nn.Module):
         # sample w, z
         z, Qz = reparameterize(z_mean, z_logvar, sample)
         w, Qw = reparameterize(w_mean, w_logvar, sample)
-        
         return (z, w), (Qz, Qw)
-
-    def encode(self, x, sample: bool):
-        # alias for encode_x
-        return self.encode_x(x, sample)
         
     def decode_x(self, z, w):
         y_recon = self.decoder_y(w)
         x_logits, x_recon = self.decoder_x(z, w)
         return x_logits, x_recon, y_recon
+
+    def encode_y(self, y, sample: bool):
+        # encode
+        w_mean, w_logvar = self.encoder_y(y)
+        # sample w
+        w2, Qw2 = reparameterize(w_mean, w_logvar, sample=sample)
+        return w2, Qw2
+
+    def decode_y(self, w2):
+        return self.decoder_y(w2)
 
     def backward_x(self):
         # encode
@@ -73,17 +95,16 @@ class DuoVAE(nn.Module):
         x_logits, self.x_recon, self.y_recon = self.decode_x(self.z, self.w)
 
         # losses
-        # * reconstruction losses are rescaled w.r.t. image and label dimensions so that hyperparameters are easier to tune and consistent regardless of the data dimensions.
+        # * reconstruction losses are rescaled w.r.t. image and label dimensions so that hyperparameters are easier to tune and consistent regardless of their dimensions.
         batch_size, _, h, w = self.x.shape
 
-        self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="sum") / (batch_size*h*w)
+        self.loss_x_recon = self.x_recon_weight*self.criteria_recon(x_logits, self.x) / (batch_size*h*w)
         self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
 
         Pz = dist.Normal(torch.zeros_like(self.z), torch.ones_like(self.z))
         self.loss_kl_div_z = self.beta_z*kl_divergence(Qz, Pz) / batch_size
 
-        with torch.no_grad():
-            # no backpropagation on the encoder q(y|w) in this step
+        with torch.no_grad(): # no backpropagation on the encoder q(y|w) during this step
             w_mean, w_logvar = self.encoder_y(self.y)
             w_std = torch.sqrt(torch.exp(w_logvar.detach()))
             Pw = dist.Normal(w_mean.detach(), w_std)
@@ -91,16 +112,7 @@ class DuoVAE(nn.Module):
 
         loss = self.loss_x_recon + self.loss_y_recon \
                 + self.loss_kl_div_z + self.loss_kl_div_w
-
         loss.backward()
-
-    def encode_y(self, y, sample: bool):
-        w_mean, w_logvar = self.encoder_y(y)
-        w2, Qw2 = reparameterize(w_mean, w_logvar, sample=sample)
-        return w2, Qw2
-
-    def decode_y(self, w2):
-        return self.decoder_y(w2)
 
     def backward_y(self):
         # encode
@@ -128,39 +140,6 @@ class DuoVAE(nn.Module):
         self.optimizer_y.zero_grad()
         self.backward_y()
         self.optimizer_y.step()
-
-    def get_losses(self):
-        # define which losses to get
-        loss_names = ["x_recon", "y_recon", "y_recon2", "kl_div_z", "kl_div_w", "kl_div_w2"]
-        losses = {}
-        for name in loss_names:
-            losses[name] = getattr(self, "loss_{}".format(name))
-        return losses
-
-    def traverse_y(self, y_mins, y_maxs, n_samples):
-        unit_range = torch.arange(0, 1+1e-5, 1.0/(n_samples-1))
-
-        (z, _), _ = self.encode_x(self.x[[0]], sample=False)
-
-        _, n_channel, h, w = self.x.shape
-        vdivider = np.ones((1, n_channel, h, 1))
-        hdivider = np.ones((1, n_channel, 1, w*n_samples + (n_samples-1)))
-        # traverse
-        x_recons_all = None
-        for y_idx in range(len(y_mins)):
-            x_recons = None
-            for a in unit_range:
-                y_new = torch.clone(self.y[[0]]).cpu() # had to move to cpu for some internal bug in the next line (Apple silicon-related)
-                y_new[0, y_idx] = y_mins[y_idx]*(1-a) + y_maxs[y_idx]*a
-                y_new = y_new.to(self.device)
-
-                # decode
-                w, _ = self.encoder_y(y_new)
-                _, x_recon = self.decoder_x(z, w)
-                x_recons = as_np(x_recon) if x_recons is None else np.concatenate((x_recons, vdivider, as_np(x_recon)), axis=-1)
-            x_recons_all = x_recons if x_recons_all is None else np.concatenate((x_recons_all, hdivider, x_recons), axis=2)
-        x_recons_all = np.transpose(x_recons_all, (0, 2, 3, 1))
-        return x_recons_all
             
 """
 Encoder q(z,w|x): Encode input x to latent variables (z, w)
@@ -244,6 +223,7 @@ class EncoderY(nn.Module):
         super().__init__()
         self.y_dim = y_dim
 
+        # we know the properties y are uncorrelated. Otherwise, use a fully connected network (e.g., MLP)
         self.encoder = nn.ModuleList()
         for y_idx in range(y_dim):
             self.encoder.append(nn.Sequential(
@@ -253,17 +233,16 @@ class EncoderY(nn.Module):
             ))
 
     def forward(self, y):
-        mu, logvar = [], []
+        mean, logvar = [], []
         for y_idx in range(self.y_dim):
             y_i = y[:, y_idx].unsqueeze(-1)
             h = self.encoder[y_idx](y_i)
-            mu_i, logvar_i = h.view(-1, 1, 2).unbind(-1)
-            mu.append(mu_i)
+            mean_i, logvar_i = h.view(-1, 1, 2).unbind(-1)
+            mean.append(mean_i)
             logvar.append(logvar_i)
-        mu = torch.cat(mu, dim=-1)
+        mean = torch.cat(mean, dim=-1)
         logvar = torch.cat(logvar, dim=-1)
-
-        return mu, logvar
+        return mean, logvar
 
 """
 Decoder p(y|w): Recontruct input y from latent variables w
@@ -288,4 +267,4 @@ class DecoderY(nn.Module):
             w_i = w[:, y_idx].unsqueeze(-1)
             y_recon.append(self.decoder[y_idx](w_i))
         y_recon = torch.cat(y_recon, dim=-1)
-        return y_recon
+        return y_recon  

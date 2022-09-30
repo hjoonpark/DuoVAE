@@ -10,7 +10,7 @@ from datasets.benchmark_datasets import BenchmarkDataset
 from utils.logger import Logger, LogLevel
 from utils.util_io import make_directories
 from utils.plotter import save_image, save_reconstructions, save_losses, save_MI_score
-from utils.util_model import load_model, save_model, save_mutual_information
+from utils.util_model import load_model, save_model, save_mutual_information, get_losses, traverse_y
 import torch
 import numpy as np
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             # below are all for plots
             # ------------------------------- #
             # keep track of loss values
-            losses = model.get_losses()
+            losses = get_losses(model)
             for loss_name, loss_val in losses.items():
                 if loss_name not in losses_curr_epoch:
                     losses_curr_epoch[loss_name] = 0
@@ -149,7 +149,7 @@ if __name__ == "__main__":
                 logger.print("model saved: {}".format(save_dir))
 
                 # save y traverse
-                traversed_y = model.traverse_y(y_mins=dataset.y_mins, y_maxs=dataset.y_maxs, n_samples=20)
+                traversed_y = traverse_y(model_name, model, x=model.x, y=model.y, y_mins=dataset.y_mins, y_maxs=dataset.y_maxs, n_samples=20)
                 save_path = save_image(traversed_y.squeeze(), os.path.join(dirs["visualization"], "y_trav_{:05d}.png".format(epoch)))
                 logger.print("y-traverse saved: {}".format(save_path))
 

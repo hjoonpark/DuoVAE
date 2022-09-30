@@ -18,7 +18,6 @@ Code references:
 class PcVAE(nn.Module):
     def __init__(self, params, is_train, logger):
         super().__init__()
-
         self.device, self.gpu_ids = get_available_devices(logger)
 
         # parameters
@@ -36,15 +35,29 @@ class PcVAE(nn.Module):
         self.beta_groupwise = params["pcvae"]["beta_groupwise"]
         self.beta_pairwise = params["pcvae"]["beta_pairwise"]
 
-        # parameters
+        # define models
         self.encoder = torch.nn.DataParallel(Encoder(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
         self.decoder = torch.nn.DataParallel(Decoder(img_channel, hid_channel, hid_dim_x, z_dim, w_dim, self.y_dim, hid_dim_y)).to(self.device)
+        
+        # used by util.model to save/load model
         self.model_names = ["encoder", "decoder"]
+        
+        # used by util.model to plot losses
+        self.loss_names = ["x_recon", "y_recon", "kl_div", "groupwise_tc", "pairwise_tc"]
         
         if is_train:
             params = itertools.chain(self.encoder.parameters(), self.decoder.parameters())
             self.optimizer = torch.optim.Adam(params, lr=lr)
     
+            if img_channel == 1:
+                # (assumes binary image) white pixel = class 1, black pixel = class 0
+                self.criteria_recon = nn.BCEWithLogitsLoss(reduce="sum")
+            elif img_channel == 3:
+                # continuous pixel values in [0, 1]
+                self.criteria_recon = nn.L1Loss(reduce="sum")
+            else:
+                raise NotImplementedError("Only grayscale and RGB images are supported.")
+
     def set_input(self, data):
         self.x = data['x'].to(self.device) # (B, img_channel, 64, 64)
         self.y = data['y'].to(self.device) # (B, y_dim)
@@ -55,7 +68,6 @@ class PcVAE(nn.Module):
         # sample w, z
         z, Qz = reparameterize(z_mean, z_logvar, sample)
         w, Qw = reparameterize(w_mean, w_logvar, sample)
-        
         return (z, w), (Qz, Qw)
 
     def decode(self, z, w):
@@ -69,10 +81,10 @@ class PcVAE(nn.Module):
         x_logits, self.x_recon, self.y_recon = self.decode(self.z, self.w)
 
         # losses
-        # * reconstruction losses are rescaled w.r.t. image and label dimensions so that hyperparameters are easier to tune and consistent regardless of the data dimensions.
+        # * reconstruction losses are rescaled w.r.t. image and label dimensions so that hyperparameters are easier to tune and consistent regardless of their dimensions.
         # https://github.com/xguo7/PCVAE/blob/dd85743c148b86dd2b583cb074b819f51d6b7a48/disvae/models/losses.py#L676
         batch_size, _, h, w = self.x.shape
-        self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="sum") / (batch_size*h*w)
+        self.loss_x_recon = self.x_recon_weight*self.criteria_recon(x_logits, self.x, reduction="sum") / (batch_size*h*w)
         self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
 
         Pz = dist.Normal(torch.zeros_like(self.z), torch.ones_like(self.z))
@@ -82,22 +94,22 @@ class PcVAE(nn.Module):
         #total correlation loss of all latents for pairwise disentangelment for mutiple properties
         w_mean, w_logvar = Qw.loc, (Qw.scale**2).log()
         log_pw, log_qw, log_prod_qwi, log_q_wCx = _get_log_pz_qz_prodzi_qzCx(latent_sample=self.w,
-                                                                             latent_dist=(w_mean, w_logvar),
-                                                                             n_data=None, # n_data is not used. Ideally, len(dataset)
-                                                                             is_mss=False)
+                                                                            latent_dist=(w_mean, w_logvar),
+                                                                            n_data=None, # n_data is not used. Ideally, len(dataset)
+                                                                            is_mss=False)
         # TC[z] = KL[q(z)||\prod_i z_i]
         self.loss_pairwise_tc = -self.beta_pairwise * (log_qw - log_prod_qwi).mean() 
         #total correlation loss between w and z (groupwise disentangelment)
         z_mean, z_logvar = Qz.loc, (Qz.scale**2).log()
         log_pwz, log_qwz, log_prod_qwqz, log_q_wzCx = _get_log_pzw_qzw_prodzw_qzwCx(latent_sample_z=self.z,
-                                                                             latent_sample_w=self.w,
-                                                                             latent_dist_z=(z_mean, z_logvar),
-                                                                             latent_dist_w=(w_mean, w_logvar),
-                                                                             n_data=None, # n_data is not used. Ideally, len(dataset)
-                                                                             is_mss=False)
+                                                                            latent_sample_w=self.w,
+                                                                            latent_dist_z=(z_mean, z_logvar),
+                                                                            latent_dist_w=(w_mean, w_logvar),
+                                                                            n_data=None, # n_data is not used. Ideally, len(dataset)
+                                                                            is_mss=False)
         #TC[z,w] = KL[q(z,w)||\z,w]
         self.loss_groupwise_tc = -self.beta_groupwise * (log_qwz - log_prod_qwqz).mean()        
-         
+
         # total loss
         loss = self.loss_x_recon + self.loss_y_recon \
                 + self.loss_kl_div + self.loss_pairwise_tc + self.loss_groupwise_tc
@@ -107,14 +119,6 @@ class PcVAE(nn.Module):
         self.optimizer.zero_grad()
         self.backward()
         self.optimizer.step()
- 
-    def get_losses(self):
-        # define which losses to get
-        loss_names = ["x_recon", "y_recon", "kl_div", "groupwise_tc", "pairwise_tc"]
-        losses = {}
-        for name in loss_names:
-            losses[name] = getattr(self, "loss_{}".format(name))
-        return losses
 
     def iterate_get_w(self, label, w_latent_idx, maxIter=20):
         # https://github.com/xguo7/PCVAE/blob/dd85743c148b86dd2b583cb074b819f51d6b7a48/disvae/models/vae.py#L318
@@ -125,32 +129,10 @@ class PcVAE(nn.Module):
             w_n1 = label.view(-1,1).to(self.device).float() - summand
             w_n = w_n1.clone()
         return w_n1.view(-1) 
-        
-    def traverse_y(self, y_mins, y_maxs, n_samples):
-        unit_range = torch.arange(0, 1+1e-5, 1.0/(n_samples-1))
 
-        (z, _), _ = self.encode(self.x[[0]], sample=False)
-
-        _, n_channel, h, w = self.x.shape
-        vdivider = np.ones((1, n_channel, h, 1))
-        hdivider = np.ones((1, n_channel, 1, w*n_samples + (n_samples-1)))
-        # traverse
-        x_recons_all = None
-        for y_idx in range(len(y_mins)):
-            x_recons = None
-            for a in unit_range:
-                y_new = torch.clone(self.y[[0]]).cpu() # had to move to cpu for some internal bug in the next line (Apple silicon-related)
-                y_new[0, y_idx] = y_mins[y_idx]*(1.0-a) + y_maxs[y_idx]*a
-                y_new = y_new.to(self.device)
-
-                # decode
-                w = self.iterate_get_w(label=y_new, w_latent_idx=y_idx)[None, :]
-                _, x_recon, _ = self.decoder(z, w)
-                x_recons = as_np(x_recon) if x_recons is None else np.concatenate((x_recons, vdivider, as_np(x_recon)), axis=-1)
-            x_recons_all = x_recons if x_recons_all is None else np.concatenate((x_recons_all, hdivider, x_recons), axis=2)
-        x_recons_all = np.transpose(x_recons_all, (0, 2, 3, 1))
-        return x_recons_all
-
+"""
+Encoder: Encode input x to latent variables (z, w)
+"""
 class Encoder(nn.Module):
     # https://github.com/xguo7/PCVAE/blob/main/disvae/models/encoders.py
     def __init__(self, img_channel, hid_channel, hid_dim, z_dim, w_dim):
@@ -189,6 +171,9 @@ class Encoder(nn.Module):
 
         return (z_mean, w_mean), (z_logvar, w_logvar)
 
+"""
+Decoder: Recontruct input x from latent variables (z, w)
+"""
 class Decoder(nn.Module):
     # https://github.com/xguo7/PCVAE/blob/main/disvae/models/decoders.py
     def __init__(self, img_channel, hid_channel, hid_dim, z_dim, w_dim, y_dim, hid_dim_y):
@@ -368,7 +353,7 @@ class SpectralNorm(object):
         self.dim = dim
         if n_power_iterations <= 0:
             raise ValueError('Expected n_power_iterations to be positive, but '
-                             'got n_power_iterations={}'.format(n_power_iterations))
+                            'got n_power_iterations={}'.format(n_power_iterations))
         self.n_power_iterations = n_power_iterations
         self.eps = eps
 
@@ -464,7 +449,7 @@ class SpectralNorm(object):
         for k, hook in module._forward_pre_hooks.items():
             if isinstance(hook, SpectralNorm) and hook.name == name:
                 raise RuntimeError("Cannot register two spectral_norm hooks on "
-                                   "the same parameter {}".format(name))
+                                    "the same parameter {}".format(name))
 
         fn = SpectralNorm(coeff, name, n_power_iterations, dim, eps)
         weight = module._parameters[name]
@@ -495,7 +480,6 @@ class SpectralNorm(object):
         module._register_load_state_dict_pre_hook(SpectralNormLoadStateDictPreHook(fn))
         return fn
 
-
 # This is a top level class because Py2 pickle doesn't like inner class nor an
 # instancemethod.
 class SpectralNormLoadStateDictPreHook(object):
@@ -512,7 +496,7 @@ class SpectralNormLoadStateDictPreHook(object):
     # To compute `v`, we solve `W_orig @ x = u`, and let
     #    v = x / (u @ W_orig @ x) * (W / W_orig).
     def __call__(self, state_dict, prefix, local_metadata, strict,
-                 missing_keys, unexpected_keys, error_msgs):
+                missing_keys, unexpected_keys, error_msgs):
         fn = self.fn
         version = local_metadata.get('spectral_norm', {}).get(fn.name + '.version', None)
         if version is None or version < 1:
@@ -524,7 +508,6 @@ class SpectralNormLoadStateDictPreHook(object):
                 u = state_dict[prefix + fn.name + '_u']
                 v = fn._solve_v_and_rescale(weight_mat, u, sigma)
                 state_dict[prefix + fn.name + '_v'] = v
-
 
 # This is a top level class because Py2 pickle doesn't like inner class nor an
 # instancemethod.
@@ -541,12 +524,11 @@ class SpectralNormStateDictHook(object):
             raise RuntimeError("Unexpected key in metadata['spectral_norm']: {}".format(key))
         local_metadata['spectral_norm'][key] = self.fn._version
 
-
 def spectral_norm_fc(module, coeff=0.97, name='weight', n_power_iterations=5, eps=1e-12, dim=None):
     r"""Applies spectral normalization to a parameter in the given module.
     .. math::
-         \mathbf{W} = \dfrac{\mathbf{W}}{\sigma(\mathbf{W})} \\
-         \sigma(\mathbf{W}) = \max_{\mathbf{h}: \mathbf{h} \ne 0} \dfrac{\|\mathbf{W} \mathbf{h}\|_2}{\|\mathbf{h}\|_2}
+        \mathbf{W} = \dfrac{\mathbf{W}}{\sigma(\mathbf{W})} \\
+        \sigma(\mathbf{W}) = \max_{\mathbf{h}: \mathbf{h} \ne 0} \dfrac{\|\mathbf{W} \mathbf{h}\|_2}{\|\mathbf{h}\|_2}
     Spectral normalization stabilizes the training of discriminators (critics)
     in Generaive Adversarial Networks (GANs) by rescaling the weight tensor
     with spectral norm :math:`\sigma` of the weight matrix calculated using
@@ -576,15 +558,13 @@ def spectral_norm_fc(module, coeff=0.97, name='weight', n_power_iterations=5, ep
     """
     if dim is None:
         if isinstance(module, (torch.nn.ConvTranspose1d,
-                               torch.nn.ConvTranspose2d,
-                               torch.nn.ConvTranspose3d)):
+                                torch.nn.ConvTranspose2d,
+                                torch.nn.ConvTranspose3d)):
             dim = 1
         else:
             dim = 0
     SpectralNorm.apply(module, name, coeff, n_power_iterations, dim, eps)
     return module
-
-
 
 def remove_spectral_norm(module, name='weight'):
     r"""Removes the spectral normalization reparameterization from a module.

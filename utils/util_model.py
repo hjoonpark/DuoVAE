@@ -99,6 +99,47 @@ def load_model(model, load_dir, logger):
             logger.print("failed to load - architecture mismatch! Initializing new instead: {}".format(model_name), LogLevel.WARNING.name)
     print("[INFO] models loaded succesfully!")
 
+def get_losses(model):
+    losses = {}
+    for name in model.loss_names:
+        losses[name] = getattr(model, "loss_{}".format(name))
+    return losses
+
+def traverse_y(model_name, model, x, y, y_mins, y_maxs, n_samples):
+    x = x.model(device)
+    y = y.model(device)
+    
+    unit_range = torch.arange(0, 1+1e-5, 1.0/(n_samples-1))
+
+    (z, _), _ = model.encode(x[[0]], sample=False)
+
+    _, n_channel, h, w = x.shape
+    vdivider = np.ones((1, n_channel, h, 1))
+    hdivider = np.ones((1, n_channel, 1, w*n_samples + (n_samples-1)))
+    # traverse
+    x_recons_all = None
+    for y_idx in range(len(y_mins)):
+        x_recons = None
+        for a in unit_range:
+            y_new = torch.clone(y[[0]]).cpu() # had to move to cpu for some internal bug in the next line (Apple silicon-related)
+            y_new[0, y_idx] = y_mins[y_idx]*(1-a) + y_maxs[y_idx]*a
+            y_new = y_new.to(model.device)
+
+            # encode for w
+            if model_name == "duovae":
+                w, _ = model.encoder_y(y_new)
+            elif model_name == "pcvae":
+                w = model.iterate_get_w(label=y_new, w_latent_idx=y_idx)[None, :]
+            else:
+                raise NotImplementedError("Only duovae and pcvae models are supported.")
+
+            # decode: differs by model
+            _, x_recon = self.decoder_x(z, w)
+            x_recons = as_np(x_recon) if x_recons is None else np.concatenate((x_recons, vdivider, as_np(x_recon)), axis=-1)
+        x_recons_all = x_recons if x_recons_all is None else np.concatenate((x_recons_all, hdivider, x_recons), axis=2)
+    x_recons_all = np.transpose(x_recons_all, (0, 2, 3, 1))
+    return x_recons_all
+        
 def save_mutual_information(dataloader, model):
     Z = None
     W = None
