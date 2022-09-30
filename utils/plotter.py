@@ -66,7 +66,7 @@ def save_losses(save_dir, losses, epoch):
 
 def save_MI_score(save_dir, MI, model_name, epoch):
     fs = 10
-    W = 2.3
+    W = 2.4
     sns.set()
     f, ax = plt.subplots(figsize=(W*4/3, W))
 

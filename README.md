@@ -4,7 +4,7 @@
 
 **DuoVAE**: [Paper]() | [Project]()
 
-![duovae](/figures/duovae_all_loop.gif)
+![duovae](/etc/figures/duovae_all_loop.gif)
 
 ## Prerequisites
 - Linux, MacOS, Windows
@@ -16,24 +16,10 @@
 
 1. Clone this repo: `git clone https://github.com/hjoonpark/DuoVAE.git`
 
-2. Configure a python environment
+2. Configure a python (recommended version 3.7+) environment either using [conda](https://docs.anaconda.com/anaconda/install/) or [pip](https://pip.pypa.io/en/stable/installation/) and install the following packages: [PyTorch](https://pytorch.org/get-started/locally/) (tested versions: 1.12.x, 1.
+        13.x) with either CPU, CUDA, or MPS supports; and, `matplotlib`, `seaborn`, `h5py`.
 
-    - Option 1 
-    
-        - *(Recommended)* For [conda](https://docs.anaconda.com/anaconda/install/) users: `conda env create -f environment.yml`
-        - For [pip](https://pip.pypa.io/en/stable/installation/) users: `pip install -r requirements.txt`
-
-    - Option 2
-        
-        Manually create and configure a python (recommended version 3.7+) virtual environment and install the following packages `matplotlib`, `seaborn`, `h5py`.
-        An example using [conda](https://docs.anaconda.com/anaconda/install/):
-
-          conda create --name duovae python=3.9 matplotlib seaborn h5py
-          conda activate duovae
-        
-    - Common
-        - In the configured environment, install [PyTorch](https://pytorch.org/get-started/locally/) (tested versions: 1.12.x, 1.
-        13.x) with either CPU, CUDA, or MPS supports.
+    Other configuration options can be found [here](/etc/doc/installation.md).
 
 ## Run
 
@@ -57,7 +43,7 @@ Additional parameters can be configured in `parameters.json`.
 
 **dSprites** dataset
 
-![figure](/figures/y_traverse_dsprites_duovae.png)
+![figure](/etc/figures/y_traverse_dsprites_duovae.png)
 
 The controlled properties (from left to right in each row) are 
 - $y_1$: scale of a shape $\rightarrow$ from small to large,
@@ -66,7 +52,7 @@ The controlled properties (from left to right in each row) are
 
 **3dshapes** dataset
 
-![figure](/figures/y_traverse_3dshapes_duovae.png)
+![figure](/etc/figures/y_traverse_3dshapes_duovae.png)
 The controlled properties (from left to right in each row) are 
 - $y_1$: scale of a shape $\rightarrow$ from small to large,
 - $y_2$: wall color $\rightarrow$ from red to violet,
@@ -79,11 +65,11 @@ In the ideal case, the heatmaps of normalized MI between each of the properties 
 
 **dSprites** dataset
 
-![figure](/figures/MI_duovae_2d.png)
+![figure](/etc/figures/MI_duovae_2d.png)
 
 **3dshapes** dataset
 
-![figure](/figures/MI_duovae_3d.png)
+![figure](/etc/figures/MI_duovae_3d.png)
 
 ### 3. Latent variable traverse
 
@@ -91,11 +77,11 @@ It is possible to have a very high MI score but with very poor reconstructions. 
 
 **dSprites** dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, $x$ position, $y$ position), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
 
-![figure](/figures/zw_traverse_dsprites_duovae.png)
+![figure](/etc/figures/zw_traverse_dsprites_duovae.png)
 
 **3dshapes** dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, wall color, floor color), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
 
-![figure](/figures/zw_traverse_3dshapes_duovae.png)
+![figure](/etc/figures/zw_traverse_3dshapes_duovae.png)
 
 Each of the supervised latent variables $\mathbf{w}$ (top 3 rows) captures the information of each property $(y_1, y_2, y_3)$, respectively, whereas the rest of the latent variables $\mathbf{z}$ (bottom 4 rows) appear to have captured the rest of the information in an entangled way.
 
