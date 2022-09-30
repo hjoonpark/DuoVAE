@@ -71,7 +71,7 @@ class PcVAE(nn.Module):
         # losses
         # * reconstruction losses are rescaled w.r.t. image and label dimensions so that hyperparameters are easier to tune and consistent regardless of the data dimensions.
         # https://github.com/xguo7/PCVAE/blob/dd85743c148b86dd2b583cb074b819f51d6b7a48/disvae/models/losses.py#L676
-        batch_size, h, w = self.x.shape[0]
+        batch_size, h, w = self.x.shape
         self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="sum") / (batch_size*h*w)
         self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
 
