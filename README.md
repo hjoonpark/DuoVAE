@@ -4,7 +4,7 @@
 
 **DuoVAE**: [Paper]() | [Project]()
 
-![duovae](/figures/duovae_all.gif)
+![duovae](/figures/duovae_all_loop.gif)
 
 ## Prerequisites
 - Linux, MacOS, Windows
