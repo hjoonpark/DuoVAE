@@ -10,7 +10,7 @@
 - Linux, MacOS, Windows
 - CPU, CUDA, MPS (arm64 Apple silicon)
 
-  (*MPS is supported for MacOS 12.3+, but could be unstable currently - September 2022*)
+  (*MPS is supported for MacOS 12.3+, but may be unstable currently - September 2022*)
 
 ## Installation
 
@@ -26,7 +26,6 @@
     - Option 2
         
         Manually create and configure a python (recommended version 3.7+) virtual environment and install the following packages `matplotlib`, `seaborn`, `h5py`.
-
         An example using [conda](https://docs.anaconda.com/anaconda/install/):
 
           conda create --name duovae python=3.9 matplotlib seaborn h5py
@@ -119,7 +118,7 @@ Each of the supervised latent variables $\mathbf{w}$ (top 3 rows) captures the i
     seaborn=0.11.2
 
 ### MacOS 
-Monterey 12.5 with Apple M1 chip (*MPS is supported for MacOS 12.3+, but could be unstable currently - September 2022*)
+Monterey 12.5 with Apple M1 chip (*MPS is supported for MacOS 12.3+, but may be unstable currently - September 2022*)
 
     python=3.9.13
     numpy=1.22.3
