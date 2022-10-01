@@ -1,4 +1,4 @@
-# Installation
+## Installation
 
 Configure a python (recommended version 3.7+) environment.
 - Option 1 
