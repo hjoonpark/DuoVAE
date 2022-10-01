@@ -17,12 +17,11 @@
 1. Clone this repo: `git clone https://github.com/hjoonpark/DuoVAE.git`
 
 2. Configure a python (recommended version 3.7+) environment using either [conda](https://docs.anaconda.com/anaconda/install/) or [pip](https://pip.pypa.io/en/stable/installation/) and install the following packages: 
-
- - [PyTorch](https://pytorch.org/get-started/locally/) with either CPU, CUDA, or MPS supports 
- - `matplotlib`, `seaborn`, `h5py`.
+    - [PyTorch](https://pytorch.org/get-started/locally/) with either CPU, CUDA, or MPS supports
+    - `matplotlib`, `seaborn`, `h5py`
 
     Other configuration options can be found [here](/etc/doc/installation.md).
-    
+
     List of tested versions can be found [here](/etc/doc/tested_versions.md).
 
 ## Run
