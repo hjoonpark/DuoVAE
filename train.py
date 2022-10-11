@@ -6,10 +6,10 @@ import shutil
 from models.duovae import DuoVAE
 from models.pcvae import PcVAE
 
-from datasets.benchmark_datasets import BenchmarkDataset
+from datasets.vae_benchmark_dataset import VaeBenchmarkDataset
 from utils.logger import Logger, LogLevel
 from utils.util_io import make_directories
-from utils.plotter import save_image, save_reconstructions, save_losses, save_MI_score
+from utils.util_visualize import save_image, save_reconstructions, save_losses, save_MI_score
 from utils.util_model import load_model, save_model, save_mutual_information, get_losses, traverse_y
 import torch
 import numpy as np
@@ -42,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("dataset", type=str, help="Dataset: 2d, 3d", default="2d")
     args = parser.parse_args()
 
+    # input args needed
     model_name = args.model
     dataset_name = args.dataset
 
@@ -53,17 +54,17 @@ if __name__ == "__main__":
     dirs = make_directories(root_dir=os.path.join("output", model_name, dataset_name), sub_dirs=["log", "model", "visualization"])
 
     # init helper class
-    logger = Logger(save_path=os.path.join(dirs["log"], "log.txt"))
+    logger = Logger(muted=False)
     logger.print("=============== START ===============")
     logger.print("  model  : {}".format(model_name))
     logger.print("  dataset: {}".format(dataset_name))
     logger.print("=====================================")
 
-    # load parameters
+    # load user-defined parameters
     params = load_parameters(model_name=model_name, save_dir=os.path.join(dirs["log"]))
 
     # load dataset
-    dataset = BenchmarkDataset(dataset_name=dataset_name, logger=logger)
+    dataset = VaeBenchmarkDataset(dataset_name=dataset_name, logger=logger)
     dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, batch_size=params["train"]["batch_size"])
     params["common"]["img_channel"] = dataset.img_channel
     params["common"]["y_dim"] = dataset.labels.shape[-1]
@@ -100,18 +101,18 @@ if __name__ == "__main__":
         losses_curr_epoch = {}
         batch_idx = 0
         for batch_idx, data in enumerate(dataloader, 0):
-            # ------------------------------- #
+            # ===================================== #
             # main train step
-            # ------------------------------- #
+            # ===================================== #
             # set input data
             model.set_input(data)
 
-            # backward step
+            # training happens here
             model.optimize_parameters()
 
-            # ------------------------------- #
+            # ===================================== #
             # below are all for plots
-            # ------------------------------- #
+            # ===================================== #
             # keep track of loss values
             losses = get_losses(model)
             for loss_name, loss_val in losses.items():
@@ -124,7 +125,7 @@ if __name__ == "__main__":
                 save_path = save_reconstructions(save_dir=dirs["log"], model=model, epoch=epoch)
                 logger.print("train recontructions saved: {}".format(save_path))
         
-        # keep track of loss values
+        # keep track of loss values every epoch
         for loss_name, loss_val in losses_curr_epoch.items():
             if loss_name not in losses_all:
                 losses_all[loss_name] = []
@@ -133,9 +134,9 @@ if __name__ == "__main__":
         # log every certain epochs
         do_initial_checks = ((epoch > 0 and epoch <= 50) and (epoch % 10 == 0))
         if do_initial_checks or (epoch % params["train"]["log_freq"] == 0):
-            loss_str = "epoch({}/{}) losses: ".format(epoch, params["train"]["n_epoch"])
+            loss_str = "epoch:{}/{} ".format(epoch, params["train"]["n_epoch"])
             for loss_name, loss_vals in losses_all.items():
-                loss_str += "{}({:.4f}) ".format(loss_name, loss_vals[-1])
+                loss_str += "{}:{:.4f} ".format(loss_name, loss_vals[-1])
             logger.print(loss_str)
             
         # checkpoint every certain epochs
@@ -160,4 +161,4 @@ if __name__ == "__main__":
                 save_path = save_MI_score(save_dir=dirs["visualization"], MI=MI_score, model_name=model_name, epoch=epoch)
                 logger.print("MI score saved: {}".format(save_path))
             model.train()
-    logger.print("========== DONE ===========")
+    logger.print("=============== DONE ================")

@@ -30,10 +30,10 @@ class DuoVAE(nn.Module):
         self.beta_w2 = params["duovae"]["beta_w2"]
 
         # define models
-        self.encoder_x = torch.nn.DataParallel(EncoderX(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
-        self.decoder_x = torch.nn.DataParallel(DecoderX(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
-        self.encoder_y = torch.nn.DataParallel(EncoderY(self.y_dim, hid_dim_y, w_dim)).to(self.device)
-        self.decoder_y = torch.nn.DataParallel(DecoderY(self.y_dim, hid_dim_y, w_dim)).to(self.device)
+        self.encoder_x = EncoderX(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim).to(self.device)
+        self.decoder_x = DecoderX(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim).to(self.device)
+        self.encoder_y = EncoderY(self.y_dim, hid_dim_y, w_dim).to(self.device)
+        self.decoder_y = DecoderY(self.y_dim, hid_dim_y, w_dim).to(self.device)
 
         # used by util.model to save/load model
         self.model_names = ["encoder_x", "decoder_x", "encoder_y", "decoder_y"]
@@ -83,7 +83,7 @@ class DuoVAE(nn.Module):
     def decode_y(self, w2):
         return self.decoder_y(w2)
 
-    def backward_x(self):
+    def forward_backward_x(self):
         # encode
         (self.z, self.w), (Qz, Qw) = self.encode_x(self.x, sample=True)
         # decode
@@ -115,7 +115,7 @@ class DuoVAE(nn.Module):
                 + self.loss_kl_div_z + self.loss_kl_div_w
         loss.backward()
 
-    def backward_y(self):
+    def forward_backward_y(self):
         # encode
         self.w2, Qw2 = self.encode_y(self.y, sample=True)
         # decode
@@ -134,12 +134,12 @@ class DuoVAE(nn.Module):
     def optimize_parameters(self):
         # main VAE
         self.optimizer_x.zero_grad()
-        self.backward_x()
+        self.forward_backward_x()
         self.optimizer_x.step()
         
         # auxiliary VAE
         self.optimizer_y.zero_grad()
-        self.backward_y()
+        self.forward_backward_y()
         self.optimizer_y.step()
             
 """

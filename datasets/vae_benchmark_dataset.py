@@ -4,7 +4,7 @@ import torch
 import numpy as np
 import h5py
 
-class BenchmarkDataset(torch.utils.data.Dataset):
+class VaeBenchmarkDataset(torch.utils.data.Dataset):
     """
     2d: dSprites
     https://github.com/deepmind/dsprites-dataset
@@ -43,7 +43,7 @@ class BenchmarkDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.imgs)
 
-    def load_dSprites(self, load_dir, label_indices=[2, 4, 5], subset=False):
+    def load_dSprites(self, load_dir, label_indices=[2, 4, 5], subset=1):
         """
         labels:
             0 Color: white
@@ -115,7 +115,7 @@ class BenchmarkDataset(torch.utils.data.Dataset):
             self.logger.print("      labels[:, {}] min/max=({:.2f}, {:.2f}), min={:.2f}, std={:.2f}".format(y_idx, labels[:, y_idx].min(), labels[:, y_idx].max(), labels[:, y_idx].mean(), labels[:, y_idx].std()))
         return imgs, labels, labels_unnormalized
 
-    def load_3dshapes(self, load_dir, label_indices=[3, 1, 0], subset=False):
+    def load_3dshapes(self, load_dir, label_indices=[3, 1, 0], subset=1):
         """
         labels:
             0 floor hue: 10 values linearly spaced in [0, 1]

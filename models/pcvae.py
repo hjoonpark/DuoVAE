@@ -4,7 +4,6 @@ import torch.nn as nn
 from torch.nn import functional as F
 import itertools
 import torch.distributions as dist
-
 from utils.util_model import get_available_devices, View, reparameterize, kl_divergence
 from utils.logger import LogLevel
 from utils.util_io import as_np
@@ -36,8 +35,8 @@ class PcVAE(nn.Module):
         self.beta_pairwise = params["pcvae"]["beta_pairwise"]
 
         # define models
-        self.encoder = torch.nn.DataParallel(Encoder(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim)).to(self.device)
-        self.decoder = torch.nn.DataParallel(Decoder(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim, self.y_dim, hid_dim_y)).to(self.device)
+        self.encoder = Encoder(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim).to(self.device)
+        self.decoder = Decoder(self.img_channel, hid_channel, hid_dim_x, z_dim, w_dim, self.y_dim, hid_dim_y).to(self.device)
         
         # used by util.model to save/load model
         self.model_names = ["encoder", "decoder"]
@@ -65,7 +64,7 @@ class PcVAE(nn.Module):
         x_logits, x_recon, y_recon = self.decoder(z, w)
         return x_logits, x_recon, y_recon
 
-    def backward(self):
+    def forward_backward(self):
         # encode
         (self.z, self.w), (Qz, Qw) = self.encode(self.x, sample=True)
         # decode
@@ -113,7 +112,7 @@ class PcVAE(nn.Module):
 
     def optimize_parameters(self):
         self.optimizer.zero_grad()
-        self.backward()
+        self.forward_backward()
         self.optimizer.step()
 
     def iterate_get_w(self, label, w_latent_idx, maxIter=20):
@@ -121,7 +120,7 @@ class PcVAE(nn.Module):
         # get the w for a kind of given property
         w_n=label.view(-1,1).to(self.device).float() # [N]
         for iter_index in range(maxIter):
-            summand = self.decoder.module.property_lin_list[w_latent_idx](w_n)
+            summand = self.decoder.property_lin_list[w_latent_idx](w_n)
             w_n1 = label.view(-1,1).to(self.device).float() - summand
             w_n = w_n1.clone()
         return w_n1.view(-1) 

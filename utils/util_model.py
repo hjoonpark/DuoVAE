@@ -38,7 +38,7 @@ def get_available_devices(logger):
         if torch.backends.mps.is_available():
             logger.print("Apple silicon (arm64) is available")
             # this ensures that the current PyTorch installation was built with MPS activated.
-            device = "cpu"
+            device = "cpu" # discovered using MPS sometimes gives NaN loss - safer not to use it until future updates
             # device = "mps:0"
             gpu_ids.append(0) # (2022) There is no multi-MPS Apple device, yet
             if not torch.backends.mps.is_built():
@@ -91,6 +91,7 @@ def load_model(model, load_dir, logger):
         state_dict = torch.load(load_path, map_location=str(model.device))
         net = getattr(model, model_name)    
         if isinstance(net, torch.nn.DataParallel):
+            # for multi-GPU
             net = net.module
         try:
             logger.print("loading model: {}".format(load_path))
