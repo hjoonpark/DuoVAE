@@ -78,17 +78,14 @@ def save_model(save_dir, model):
 def load_model(model, load_dir, logger):
     for model_name in model.model_names:
         load_path = os.path.join(load_dir, "{}.pt".format(model_name))
-        state_dict = torch.load(load_path, map_location=str(model.device))
         net = getattr(model, model_name)    
-        if isinstance(net, torch.nn.DataParallel):
-            # for multi-GPU
-            net = net.module
         try:
             logger.print("loading model: {}".format(load_path))
+            state_dict = torch.load(load_path, map_location=str(model.device))
             net.load_state_dict(state_dict)
+            logger.print("[INFO] model={} loaded succesfully!".format(model_name))
         except:
             logger.print("failed to load - architecture mismatch! Initializing new instead: {}".format(model_name), LogLevel.WARNING.name)
-    logger.print("[INFO] models loaded succesfully!")
 
 def get_losses(model):
     losses = {}
