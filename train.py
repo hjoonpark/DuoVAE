@@ -88,9 +88,10 @@ if __name__ == "__main__":
 
     """
     # To continue training from a saved checkpoint, set load_dir to a directory containing *.pt files   
-    # example: load_dir = "/output/duovae/2d/model/02000/"
+    # example: load_dir = "output/duovae/2d/model/"
     """
-    load_dir = None
+    load_dir = "output/duovae/2d/model/"
+    # load_dir = None
     if load_dir is not None:
         load_model(model, load_dir, logger)
     model.train()
@@ -148,8 +149,8 @@ if __name__ == "__main__":
                 logger.print("train losses saved: {}, {}".format(json_path, save_path))
 
                 # save model
-                save_dir = save_model(save_root_dir=dirs["model"], epoch=epoch, model=model)
-                logger.print("model saved: {}".format(save_dir))
+                save_dir = save_model(save_dir=dirs["model"], model=model)
+                logger.print("model saved: {}".format(dirs["model"]))
 
                 # save y traverse
                 traversed_y = traverse_y(model_name, model, x=model.x, y=model.y, y_mins=dataset.y_mins, y_maxs=dataset.y_maxs, n_samples=20)

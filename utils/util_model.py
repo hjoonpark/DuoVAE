@@ -60,10 +60,7 @@ def kl_divergence(Q, P):
     batch_size, z_dim = Q.loc.shape
     return dist.kl_divergence(Q, P).sum()
 
-def save_model(save_root_dir, epoch, model):
-    save_dir = os.path.join(save_root_dir, "{:05d}".format(epoch))
-    os.makedirs(save_dir, exist_ok=True)
-
+def save_model(save_dir, model):
     for model_name in model.model_names:
         save_path = os.path.join(save_dir, "{}.pt".format(model_name))
 
@@ -76,18 +73,11 @@ def save_model(save_root_dir, epoch, model):
             net.to(model.gpu_ids[0])
         else:
             torch.save(net.cpu().state_dict(), save_path)
-    
-    # only keep the recently saved models
-    folders_names = sorted(next(os.walk(save_root_dir))[1])
-    if len(folders_names) > 3:
-        f_to_delete = os.path.join(save_root_dir, folders_names[0])
-        shutil.rmtree(f_to_delete)
     return save_dir
 
 def load_model(model, load_dir, logger):
     for model_name in model.model_names:
         load_path = os.path.join(load_dir, "{}.pt".format(model_name))
-        print("load_path:", load_path)
         state_dict = torch.load(load_path, map_location=str(model.device))
         net = getattr(model, model_name)    
         if isinstance(net, torch.nn.DataParallel):
@@ -98,7 +88,7 @@ def load_model(model, load_dir, logger):
             net.load_state_dict(state_dict)
         except:
             logger.print("failed to load - architecture mismatch! Initializing new instead: {}".format(model_name), LogLevel.WARNING.name)
-    print("[INFO] models loaded succesfully!")
+    logger.print("[INFO] models loaded succesfully!")
 
 def get_losses(model):
     losses = {}
