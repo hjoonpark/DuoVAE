@@ -25,8 +25,10 @@ class Logger():
         timestamp = self._get_timestamp()
         if not self.muted:
             print("{} {} {}".format(timestamp, level, msg)) # print message
-        with open(self.save_path, "a+") as log_file:
-            log_file.write("{} {} {}\n".format(timestamp, level, msg)) # write message
+
+        if self.save_path is not None:
+            with open(self.save_path, "a+") as log_file:
+                log_file.write("{} {} {}\n".format(timestamp, level, msg)) # write message
 
     def _get_timestamp(self):
         now = datetime.datetime.now()

@@ -54,7 +54,7 @@ if __name__ == "__main__":
     dirs = make_directories(root_dir=os.path.join("output", model_name, dataset_name), sub_dirs=["log", "model", "visualization"])
 
     # init helper class
-    logger = Logger(muted=False)
+    logger = Logger(save_path=os.path.join(dirs["log"], "log.txt"), muted=False)
     logger.print("=============== START ===============")
     logger.print("  model  : {}".format(model_name))
     logger.print("  dataset: {}".format(dataset_name))
