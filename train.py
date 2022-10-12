@@ -90,8 +90,8 @@ if __name__ == "__main__":
     # To continue training from a saved checkpoint, set load_dir to a directory containing *.pt files   
     # example: load_dir = "output/duovae/2d/model/"
     """
-    load_dir = "output/duovae/2d/model/"
-    # load_dir = None
+    # load_dir = "output/duovae/2d/model/"
+    load_dir = None
     if load_dir is not None:
         load_model(model, load_dir, logger)
     model.train()
