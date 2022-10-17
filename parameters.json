@@ -1,15 +1,15 @@
 {
     "train": {
-        "n_epoch": 3000,
+        "n_epoch": 1000,
         "batch_size": 1024,
         "lr": 0.0002,
-        "log_freq": 1,
-        "save_freq": 50
+        "log_freq": 10,
+        "save_freq": 250
     },
     "common": {
         "z_dim": 3,
-        "w_dim": 3,
-        "x_recon_weight": 2.0,
+        "w_dim": 4,
+        "x_recon_weight": 1.0,
         "y_recon_weight": 1.0,
         "beta_z": 0.005,
         "beta_w": 0.005,
