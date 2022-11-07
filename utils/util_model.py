@@ -49,7 +49,7 @@ def get_available_devices(logger):
 
 def reparameterize(mean, logvar, sample):
     if sample:
-        std = torch.sqrt(torch.exp(logvar))
+        std = torch.exp(0.5*logvar)
         P = dist.Normal(mean, std)
         z = P.rsample()
         return z, P
