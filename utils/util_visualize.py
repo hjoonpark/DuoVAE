@@ -12,6 +12,7 @@ def save_image(I, save_path):
     I = (I*255).astype(np.uint8)
     I = Image.fromarray(I)
     I.save(save_path)
+    return save_path
 
 def save_reconstructions(save_dir, model, epoch, n_samples=10):
     x = as_np(model.x)
