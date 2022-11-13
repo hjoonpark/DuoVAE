@@ -1,8 +1,24 @@
 # DuoVAE
 
-(brief introduction)
+[Paper]() | [Link1]() | [Link2]()
 
-**DuoVAE**: [Paper]() | [Project]()
+PyTorch implementation of the VAE-framework for property-controlled data generation introduced in
+
+**`Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues (Submitted)`**
+
+`Hyojoon Park, Bin Li,  Yuming Liu, Michael S. Nelson, Helen M. Wilson, Eftychios Sifakis, Kevin W. Eliceiri, Medical Image Analysis, 2022`
+
+We aim to control the generative process to generate data with desired properties by supervising a VAE using continuous-valued labels.
+
+For ~ refer to [Link1]().
+
+For ~ refer to [Link2]().
+
+![figure](/etc/figures/pipeline.png)
+
+---
+
+**DuoVAE**
 
 ![duovae](/etc/figures/duovae_all_loop.gif)
 
