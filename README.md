@@ -4,9 +4,8 @@
 
 PyTorch implementation of the VAE-framework for property-controlled data generation introduced in
 
-**`Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues (Submitted)`**
-
-`Hyojoon Park, Bin Li,  Yuming Liu, Michael S. Nelson, Helen M. Wilson, Eftychios Sifakis, Kevin W. Eliceiri, Medical Image Analysis, 2022`
+**Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues,**
+*Hyojoon Park, Bin Li,  Yuming Liu, Michael S. Nelson, Helen M. Wilson, Eftychios Sifakis, Kevin W. Eliceiri, Medical Image Analysis, 2022*. (Submitted)
 
 We aim to control the generative process to generate data with desired properties by supervising a VAE using continuous-valued labels.
 
