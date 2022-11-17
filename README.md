@@ -5,15 +5,16 @@
 PyTorch implementation of **DuoVAE (a VAE-framework for property-controlled data generation)** proposed in
 
 **`Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues`**,
+
 `Medical Image Analysis (under review)`
 
 We aim to control the generative process to generate data with desired properties by supervising a VAE using continuous-valued labels.
 
-## Related repository:
+![figure](/etc/figures/pipeline.png)
+
+## Related repository
 -  Collagen fiber extraction and analysis in cancer tissue microenvironment: [Analysis repository](https://github.com/uw-loci/collagen-fiber-metrics).
 - Training of the collagen fiber centerline extract network (Stage I, II, and III): [Training repository](https://github.com/hjoonpark/collagen-fiber-centerline-extraction).
-
-![figure](/etc/figures/pipeline.png)
 
 ---
 
