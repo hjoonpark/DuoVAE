@@ -1,17 +1,17 @@
 # DuoVAE
 
-[Paper]() | [Link1]() | [Link2]()
+[**Paper**]() | [**Analysis repository**](https://github.com/uw-loci/collagen-fiber-metrics) | [**Training repository**](https://github.com/hjoonpark/collagen-fiber-centerline-extraction) | DuoVAE (current)
 
-PyTorch implementation of the VAE-framework for property-controlled data generation introduced in
+PyTorch implementation of **DuoVAE (a VAE-framework for property-controlled data generation)** proposed in
 
-**Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues,**
-*Hyojoon Park, Bin Li,  Yuming Liu, Michael S. Nelson, Helen M. Wilson, Eftychios Sifakis, Kevin W. Eliceiri, Medical Image Analysis, 2022*. (Submitted)
+**`Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues`**,
+`Medical Image Analysis (under review)`
 
 We aim to control the generative process to generate data with desired properties by supervising a VAE using continuous-valued labels.
 
-For ~ refer to [Link1]().
-
-For ~ refer to [Link2]().
+## Related repository:
+-  Collagen fiber extraction and analysis in cancer tissue microenvironment: [Analysis repository](https://github.com/uw-loci/collagen-fiber-metrics).
+- Training of the collagen fiber centerline extract network (Stage I, II, and III): [Training repository](https://github.com/hjoonpark/collagen-fiber-centerline-extraction).
 
 ![figure](/etc/figures/pipeline.png)
 
@@ -29,15 +29,12 @@ For ~ refer to [Link2]().
 
 ## Installation
 
-1. Clone this repo: `git clone https://github.com/hjoonpark/DuoVAE.git`
-
-2. Configure a python (recommended version 3.7+) environment using either [conda](https://docs.anaconda.com/anaconda/install/) or [pip](https://pip.pypa.io/en/stable/installation/) and install the following packages: 
+- Configure a python (recommended version 3.7+) environment using either [conda](https://docs.anaconda.com/anaconda/install/) or [pip](https://pip.pypa.io/en/stable/installation/) and install the following packages: 
     - [PyTorch](https://pytorch.org/get-started/locally/) with either CPU, CUDA, or MPS supports
     - `matplotlib`, `seaborn`, `h5py`
 
-    Other configuration options can be found [here](/etc/doc/installation.md).
-
-    List of tested versions can be found [here](/etc/doc/tested_versions.md).
+- Other configuration methods can be found [here](/etc/doc/installation.md).
+- List of tested versions can be found [here](/etc/doc/tested_versions.md).
 
 ## Run
 
@@ -63,7 +60,7 @@ More command examples can be found [here](run.sh).
 
 ---
 
-## Evaluation results
+## Results
 
 ### 1. Property-controlled image generations
 
