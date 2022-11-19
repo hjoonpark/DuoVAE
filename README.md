@@ -68,14 +68,16 @@ More command examples can be found [here](run.sh).
 
 ### 1. Property-controlled image generations
 
-- **dSprites** dataset\
+- **dSprites** dataset
+
 ![figure](/etc/figures/y_traverse_dsprites_duovae.png)
   The controlled properties (from left to right in each row) are 
   - $y_1$: scale of a shape $\rightarrow$ from small to large,
   - $y_2$: $x$ position of a shape $\rightarrow$ from left to right,
   - $y_3$: $y$ position of a shape $\rightarrow$ from top to bottom.
 
-- **3dshapes** dataset\
+- **3dshapes** dataset
+
 ![figure](/etc/figures/y_traverse_3dshapes_duovae.png)
   The controlled properties (from left to right in each row) are 
   - $y_1$: scale of a shape $\rightarrow$ from small to large,
