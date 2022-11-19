@@ -165,7 +165,7 @@ class EncoderX(nn.Module):
             nn.LeakyReLU(0.2, True),
             nn.Linear(hid_dim, hid_dim),
             nn.LeakyReLU(0.2, True),
-            nn.Linear(hid_dim, 2*(z_dim+w_dim)),
+            nn.Linear(hid_dim, 2*(z_dim+w_dim))
         )
 
     def forward(self, x):
