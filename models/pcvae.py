@@ -136,7 +136,7 @@ class Encoder(nn.Module):
         self.w_dim = w_dim
 
         self.encoder = nn.Sequential(
-            nn.Conv2d(img_channel, hid_channel, kernel_size=4, stride=2, padding=1, bias=False, # (32, 32, 32)
+            nn.Conv2d(img_channel, hid_channel, kernel_size=4, stride=2, padding=1, bias=False), # (32, 32, 32)
             nn.BatchNorm2d(hid_channel),
             LeakyReLU(0.2, True),
             nn.Conv2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1, bias=False), # (32, 16, 16
