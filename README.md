@@ -68,21 +68,23 @@ More command examples can be found [here](run.sh).
 
 ### 1. Property-controlled image generations
 
-- **dSprites** dataset
+**dSprites** dataset
 
 ![figure](/etc/figures/y_traverse_dsprites_duovae.png)
-  The controlled properties (from left to right in each row) are 
-  - $y_1$: scale of a shape $\rightarrow$ from small to large,
-  - $y_2$: $x$ position of a shape $\rightarrow$ from left to right,
-  - $y_3$: $y$ position of a shape $\rightarrow$ from top to bottom.
 
-- **3dshapes** dataset
+The controlled properties (from left to right in each row) are 
+- $y_1$: scale of a shape $\rightarrow$ from small to large,
+- $y_2$: $x$ position of a shape $\rightarrow$ from left to right,
+- $y_3$: $y$ position of a shape $\rightarrow$ from top to bottom.
+
+**3dshapes** dataset
 
 ![figure](/etc/figures/y_traverse_3dshapes_duovae.png)
-  The controlled properties (from left to right in each row) are 
-  - $y_1$: scale of a shape $\rightarrow$ from small to large,
-  - $y_2$: wall color $\rightarrow$ from red to violet,
-  - $y_3$: floor color $\rightarrow$ from red to violet.
+
+The controlled properties (from left to right in each row) are 
+- $y_1$: scale of a shape $\rightarrow$ from small to large,
+- $y_2$: wall color $\rightarrow$ from red to violet,
+- $y_3$: floor color $\rightarrow$ from red to violet.
 
 ### 2. Normalized mutual information (MI)
 
@@ -99,11 +101,11 @@ We can see that the diagonal values of the heatmap are high and close to 1 for b
 
 It is possible to have a very high MI score but with very poor reconstructions. Therefore, we visualize the reconstructions generated when traversing the latent variables to validate whether the latent representation spaces are smooth and disentangled.
 
-- **dSprites** dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, $x$ position, $y$ position), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
+**dSprites** dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, $x$ position, $y$ position), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
 
 ![figure](/etc/figures/zw_traverse_dsprites_duovae.png)
 
-- **3dshapes** dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, wall color, floor color), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
+**3dshapes** dataset with supervised latent variables $(w_1, w_2, w_3)$ for (scale, wall color, floor color), respectively, and unsupervised latent variables $(z_1, z_2, z_3, z_4)$.
 
 ![figure](/etc/figures/zw_traverse_3dshapes_duovae.png)
 
