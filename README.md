@@ -1,24 +1,22 @@
 # DuoVAE
 
-[**Paper**]() | [**Analysis repository**](https://github.com/uw-loci/collagen-fiber-metrics) | [**Training repository**](https://github.com/hjoonpark/collagen-fiber-centerline-extraction) | DuoVAE (current)
 
-PyTorch implementation of **DuoVAE (a VAE-framework for property-controlled data generation)** proposed in
-
-**`Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues`**,
-
-`Medical Image Analysis (under review)`
-
-We aim to control the generative process to generate data with desired properties by supervising a VAE using continuous-valued labels.
+PyTorch implementation of DuoVAE (a VAE-framework for property-controlled data generation) proposed in\
+[**Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues**](),\
+Medical Image Analysis 2022 (under review).
 
 ![figure](/etc/figures/pipeline.png)
 
+
+This repository is designed specifically for training and testing on the VAE benchmark datasets: [dSprites](https://github.com/deepmind/dsprites-dataset) and [3dshapes](https://github.com/deepmind/3d-shapes).
+
 ## Related repository
--  Collagen fiber extraction and analysis in cancer tissue microenvironment: [Analysis repository](https://github.com/uw-loci/collagen-fiber-metrics).
-- Training of the collagen fiber centerline extract network (Stage I, II, and III): [Training repository](https://github.com/hjoonpark/collagen-fiber-centerline-extraction).
+ - [Analysis repository](https://github.com/uw-loci/collagen-fiber-metrics): Collagen fiber extraction and analysis in cancer tissue microenvironment.
+ - [Training repository](https://github.com/hjoonpark/collagen-fiber-centerline-extraction): Training of the collagen fiber centerline extract network (Stage I, II, and III).
 
 ---
 
-**DuoVAE**
+DuoVAE generates data with desired properties controlled using continuous property values.
 
 ![duovae](/etc/figures/duovae_all_loop.gif)
 
@@ -30,20 +28,26 @@ We aim to control the generative process to generate data with desired propertie
 
 ## Installation
 
-- Configure a python (recommended version 3.7+) environment using either [conda](https://docs.anaconda.com/anaconda/install/) or [pip](https://pip.pypa.io/en/stable/installation/) and install the following packages: 
-    - [PyTorch](https://pytorch.org/get-started/locally/) with either CPU, CUDA, or MPS supports
-    - `matplotlib`, `seaborn`, `h5py`
+- For [conda](https://docs.anaconda.com/anaconda/install/) users
 
-- Other configuration methods can be found [here](/etc/doc/installation.md).
-- List of tested versions can be found [here](/etc/doc/tested_versions.md).
+      conda env create -f environment.yml
 
-## Run
+- For [pip](https://pip.pypa.io/en/stable/installation/) users
 
-### Train
+      pip install -r requirements.txt
+
+- Then, install [PyTorch](https://pytorch.org/get-started/locally/) with either CPU, CUDA, or MPS supports.
+
+Other configuration methods can be found [here](/etc/doc/installation.md).\
+List of tested versions can be found [here](/etc/doc/tested_versions.md).
+
+
+## Train
+
+Command format is `python train.py <model-name> <dataset-type>`, for example
 
     python train.py duovae 2d
 
-Command format is `python train.py <model-name> <dataset-type>`.
 - `<model-name>`
   - `duovae` to use DuoVAE (ours)
   - `pcvae` to use [PCVAE](https://github.com/xguo7/PCVAE) (for comparisons)
@@ -51,22 +55,18 @@ Command format is `python train.py <model-name> <dataset-type>`.
   - `2d` to use [dSprites](https://github.com/deepmind/dsprites-dataset)
   - `3d` to use [3dshapes](https://github.com/deepmind/3d-shapes)
 
-Additional parameters can be configured in `parameters.json`.
-
+Additional parameters can be configured in `parameters.json`.\
 More command examples can be found [here](run.sh).
 
-### Test
+## Test
 
 (coming)
-
----
 
 ## Results
 
 ### 1. Property-controlled image generations
 
-**dSprites** dataset
-
+**dSprites** dataset\
 ![figure](/etc/figures/y_traverse_dsprites_duovae.png)
 
 The controlled properties (from left to right in each row) are 
@@ -74,8 +74,7 @@ The controlled properties (from left to right in each row) are
 - $y_2$: $x$ position of a shape $\rightarrow$ from left to right,
 - $y_3$: $y$ position of a shape $\rightarrow$ from top to bottom.
 
-**3dshapes** dataset
-
+**3dshapes** dataset\
 ![figure](/etc/figures/y_traverse_3dshapes_duovae.png)
 The controlled properties (from left to right in each row) are 
 - $y_1$: scale of a shape $\rightarrow$ from small to large,
@@ -87,7 +86,7 @@ The controlled properties (from left to right in each row) are
 The [mutual information](https://en.wikipedia.org/wiki/Mutual_information) of two random variables quantifies the amount of information (in units such as shannons (bits) or nats) obtained about one random variable by observing the other random variable.
 In the ideal case, the heatmaps of normalized MI between each of the properties and latent variables should be 1 in the diagonal values and 0 in the off-diagonal values as well as for $\mathbf{z}_{avg}$ (average MI of all latent variables $z_i\in\mathbf{z}$), indicating perfect correlations where each property $y_i$ is completely inferred by one supervised latent variable $w_i$.
 
-Below are the heatmaps of the normalized MI - **dSprites** (left) and **3dshapes** (right) dataset:
+Below are the heatmaps of the normalized MI on *dSprites* (left) and *3dshapes* (right) dataset.
 
 ![figure](/etc/figures/MI_double.png)
 
