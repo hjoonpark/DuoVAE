@@ -151,20 +151,20 @@ class EncoderX(nn.Module):
         self.z_dim = z_dim
         self.w_dim = w_dim
         self.encoder = nn.Sequential(
-            nn.Conv2d(img_channel, hid_channel, kernel_size=4, stride=2, padding=1), # (32, 32, 32)
+            nn.Conv2d(img_channel, hid_channel, kernel_size=4, stride=2, padding=1, bias=False), # (32, 32, 32)
             nn.BatchNorm2d(hid_channel),
-            nn.ReLU(),
-            nn.Conv2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1), # (32, 16, 16)
+            nn.LeakyReLU(0.2, True),
+            nn.Conv2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1, bias=False), # (32, 16, 16)
             nn.BatchNorm2d(hid_channel),
-            nn.ReLU(),
-            nn.Conv2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1), # (32, 8, 8)
+            nn.LeakyReLU(0.2, True),
+            nn.Conv2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1, bias=False), # (32, 8, 8)
             nn.BatchNorm2d(hid_channel),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2, True),
             View((-1, hid_channel*8*8)),
             nn.Linear(hid_channel*8*8, hid_dim),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2, True),
             nn.Linear(hid_dim, hid_dim),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2, True),
             nn.Linear(hid_dim, 2*(z_dim+w_dim)),
         )
 
@@ -190,21 +190,20 @@ class DecoderX(nn.Module):
 
         self.decoder = nn.Sequential(
             nn.Linear(z_dim+w_dim, hid_dim),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2, True),
             nn.Linear(hid_dim, hid_dim),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2, True),
             nn.Linear(hid_dim, hid_channel*8*8),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2, True),
             View((-1, hid_channel, 8, 8)),
-            nn.ConvTranspose2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1), # (32, 16, 16)
+            nn.ConvTranspose2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1, bias=False), # (32, 16, 16)
             nn.BatchNorm2d(hid_channel),
-            nn.ReLU(),
-            nn.ConvTranspose2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1), # (32, 32, 32)
+            nn.LeakyReLU(0.2, True),
+            nn.ConvTranspose2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1, bias=False), # (32, 32, 32)
             nn.BatchNorm2d(hid_channel),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2, True),
             nn.ConvTranspose2d(hid_channel, hid_channel, kernel_size=4, stride=2, padding=1), # (32, 64, 64)
-            nn.BatchNorm2d(hid_channel),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2, True),
             nn.ConvTranspose2d(hid_channel, img_channel, kernel_size=3, stride=1, padding=1) # (img_channel, 64, 64)
         )
 
@@ -229,7 +228,7 @@ class EncoderY(nn.Module):
         for y_idx in range(y_dim):
             self.encoder.append(nn.Sequential(
                 nn.Linear(1, hid_dim),
-                nn.ReLU(),
+                nn.LeakyReLU(0.2, True),
                 nn.Linear(hid_dim, 2)
             ))
 
@@ -257,7 +256,7 @@ class DecoderY(nn.Module):
         for y_idx in range(y_dim):
             self.decoder.append(nn.Sequential(
                 nn.Linear(1, hid_dim),
-                nn.ReLU(),
+                nn.LeakyReLU(0.2, True),
                 nn.Linear(hid_dim, 1),
                 nn.Sigmoid()
             ))
