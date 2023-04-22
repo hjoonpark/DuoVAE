@@ -95,21 +95,21 @@ class DuoVAE(nn.Module):
         
         if self.img_channel == 1:
             # treat black pixel as class 0 and white pixel as class 1
-            self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="sum") / (batch_size*h*w)
+            self.loss_x_recon = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="mean")
+            self.loss_x_reconb = self.x_recon_weight*F.binary_cross_entropy_with_logits(x_logits, self.x, reduction="mean")
         else: 
-            # RGB images
-            self.loss_x_recon = self.x_recon_weight*F.l1_loss(self.x_recon, self.x, reduction="sum") / (batch_size*h*w)
+            self.loss_x_recon = self.x_recon_weight*F.l1_loss(self.x_recon, self.x, reduction="mean")
 
-        self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
+        self.loss_y_recon = self.y_recon_weight*F.mse_loss(self.y_recon, self.y, reduction="mean")
 
         Pz = dist.Normal(torch.zeros_like(self.z), torch.ones_like(self.z))
-        self.loss_kl_div_z = self.beta_z*kl_divergence(Qz, Pz) / batch_size
+        self.loss_kl_div_z = self.beta_z*kl_divergence(Qz, Pz)
 
         with torch.no_grad(): # no backpropagation on the encoder q(y|w) during this step
             w_mean, w_logvar = self.encoder_y(self.y)
             w_std = torch.sqrt(torch.exp(w_logvar.detach()))
             Pw = dist.Normal(w_mean.detach(), w_std)
-        self.loss_kl_div_w = self.beta_w*kl_divergence(Qw, Pw) / batch_size
+        self.loss_kl_div_w = self.beta_w*kl_divergence(Qw, Pw)
 
         loss = self.loss_x_recon + self.loss_y_recon \
                 + self.loss_kl_div_z + self.loss_kl_div_w
@@ -123,10 +123,10 @@ class DuoVAE(nn.Module):
 
         # losses
         batch_size = self.x.shape[0]
-        self.loss_y_recon2 = self.y_recon_weight*F.mse_loss(self.y_recon2, self.y, reduction="sum") / batch_size
+        self.loss_y_recon2 = self.y_recon_weight*F.mse_loss(self.y_recon2, self.y, reduction="mean")
 
         Pw = dist.Normal(torch.zeros_like(self.w2), torch.ones_like(self.w2))
-        self.loss_kl_div_w2 = self.beta_w2*kl_divergence(Qw2, Pw) / batch_size
+        self.loss_kl_div_w2 = self.beta_w2*kl_divergence(Qw2, Pw)
 
         loss = self.loss_y_recon2 + self.loss_kl_div_w2
         loss.backward()

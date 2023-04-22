@@ -58,7 +58,7 @@ def reparameterize(mean, logvar, sample):
 
 def kl_divergence(Q, P):
     batch_size, z_dim = Q.loc.shape
-    return dist.kl_divergence(Q, P).sum()
+    return dist.kl_divergence(Q, P).mean()
 
 def save_model(save_dir, model):
     for model_name in model.model_names:
@@ -93,7 +93,7 @@ def get_losses(model):
         losses[name] = getattr(model, "loss_{}".format(name))
     return losses
 
-def traverse_y(model_name, model, x, y, y_mins, y_maxs, n_samples):
+def traverse_y(model_name, model, x, y, y_mins, y_maxs, n_samples, logger=None):
     x = x.to(model.device)
     y = y.to(model.device)
 
@@ -103,16 +103,20 @@ def traverse_y(model_name, model, x, y, y_mins, y_maxs, n_samples):
 
     _, n_channel, h, w = x.shape
     vdivider = np.ones((1, n_channel, h, 1))
-    hdivider = np.ones((1, n_channel, 1, w*n_samples + (n_samples-1)))
+    hdivider = np.ones((1, n_channel, int(h*0.65), w*n_samples + (n_samples-1)))
     # traverse
     x_recons_all = None
+    x_recons_rows = []
     for y_idx in range(len(y_mins)):
+        x_recons_cols = []
         x_recons = None
         for a in unit_range:
             y_new = torch.clone(y[[0]]).cpu() # had to move to cpu for some internal bug in the next line (Apple silicon-related)
             y_new[0, y_idx] = y_mins[y_idx]*(1-a) + y_maxs[y_idx]*a
             y_new = y_new.to(model.device)
 
+            if logger is not None:
+                logger.print("y = {}".format(y_new.cpu().squeeze().numpy().tolist()))
             # encode for w
             if model_name == "duovae":
                 w, _ = model.encoder_y(y_new)
@@ -124,9 +128,11 @@ def traverse_y(model_name, model, x, y, y_mins, y_maxs, n_samples):
             # decode: differs by model
             _, x_recon, _ = model.decode(z, w)
             x_recons = as_np(x_recon) if x_recons is None else np.concatenate((x_recons, vdivider, as_np(x_recon)), axis=-1)
+            x_recons_cols.append(as_np(x_recon))
         x_recons_all = x_recons if x_recons_all is None else np.concatenate((x_recons_all, hdivider, x_recons), axis=2)
+        x_recons_rows.append(x_recons_cols)
     x_recons_all = np.transpose(x_recons_all, (0, 2, 3, 1))
-    return x_recons_all
+    return x_recons_all, x_recons_rows
         
 def save_mutual_information(dataloader, model):
     Z = None
@@ -164,6 +170,12 @@ def _compute_MI_score(latents, labels):
 
     return all_score
 
+"""
+ I(x;y) = sum_{x,y}p(x)p(y|x)log(p(y|x))-sum_{x,y}p(x,y)log(p(y))
+        = H(Y)-H(Y|X)
+        = H(X)+H(Y)-H(X,Y)
+        = -sum_x{ p(x)log(p(x)) } - sum_y{ p(y)log(p(y)) } - sum_x{ sum_y{ p(x,y)log2(p(x,y)) } }
+"""
 def _calc_MI(X, Y, bins=10):
     c_XY = np.histogram2d(X,Y,bins)[0]
     c_X = np.histogram(X,bins)[0]

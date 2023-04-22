@@ -12,15 +12,15 @@ class VaeBenchmarkDataset(torch.utils.data.Dataset):
     3d: 3dshapes
     https://github.com/deepmind/3d-shapes
     """
-    def __init__(self, dataset_name, logger, load_dir="./datasets/data"):
+    def __init__(self, dataset_name, subset, logger, load_dir="./datasets/data"):
         os.makedirs(load_dir, exist_ok=True)
         self.logger = logger
 
         if dataset_name == "2d":
-            imgs, labels, labels_unnormalized = self.load_dSprites(load_dir)
+            imgs, labels, labels_unnormalized = self.load_dSprites(load_dir, subset=subset)
             self.img_channel = 1 # grayscale
         elif dataset_name == "3d":
-            imgs, labels, labels_unnormalized = self.load_3dshapes(load_dir)
+            imgs, labels, labels_unnormalized = self.load_3dshapes(load_dir, subset=subset)
             self.img_channel = 3 # rgb
         else:
             raise NotImplementedError("Only 2d and 3d benchmark datasets are supported.")
@@ -86,7 +86,8 @@ class VaeBenchmarkDataset(torch.utils.data.Dataset):
 
         if subset:
             # subset for quick debugging
-            n_samples = 100
+            # n_samples = 100
+            n_samples = 6*32*32*5
             def sample_latent(size=1):
                 samples = np.zeros((size, labels_sizes.size))
                 for lat_i, lat_size in enumerate(labels_sizes):
@@ -100,9 +101,9 @@ class VaeBenchmarkDataset(torch.utils.data.Dataset):
             fix some of the latents
             """
             # use only 1 shape: 0=square, 1=eplisoid, 2=heart
-            latents_sampled[:, 1] = 2
+            latents_sampled[:, 1] = 1
             # fix orientation
-            latents_sampled[:, 3] = 0
+            # latents_sampled[:, 3] = 0
 
             indices_sampled = latent_to_index(latents_sampled)
             imgs = torch.FloatTensor(imgs[indices_sampled][:, :, :]) # [N, 64, 64] -> [N, 1, 64, 64]

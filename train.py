@@ -17,12 +17,12 @@ import numpy as np
 MODELS_SUPPORTED = set(["duovae", "pcvae"])
 DATASETS_SUPPORTED = set(["2d", "3d"])
 
-def load_parameters(model_name, save_dir):
+def load_parameters(param_path, model_name, save_dir):
     # load parameters from .json file
-    params = json.load(open("parameters.json", "r"))
+    params = json.load(open(param_path, "r"))
 
     # keep a record of the parameters for future reference
-    save_path = os.path.join(save_dir, "parameters.json")
+    save_path = os.path.join(save_dir, os.path.basename(param_path))
     json.dump(params, open(save_path, "w+"), indent=4)
     return params
 
@@ -40,6 +40,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("model", type=str, help="Model: duovae, pcvae", default="duovae")
     parser.add_argument("dataset", type=str, help="Dataset: 2d, 3d", default="2d")
+    parser.add_argument("--output-dir", type=str, help="Output directory", default=None)
+    parser.add_argument("--param-path", type=str, help="Parameter file path", default=None)
+    parser.add_argument("--subset-dataset", type=bool, help="False to use all number of data", default=False)
+    parser.add_argument("--load-dir", type=str, help="Model directory", default=None)
+    parser.add_argument("--starting-epoch", type=int, help="Starting epoch number", default=0)
     args = parser.parse_args()
 
     # input args needed
@@ -51,7 +56,8 @@ if __name__ == "__main__":
     assert dataset_name in DATASETS_SUPPORTED, "[ERROR] dataset_name={} is not supported! Chooose from {}".format(dataset_name, DATASETS_SUPPORTED)
 
     # make output directories
-    dirs = make_directories(root_dir=os.path.join("output", model_name, dataset_name), sub_dirs=["log", "model", "visualization"])
+    args.output_dir = os.path.join(os.path.join("output", model_name, dataset_name)) if args.output_dir is None else args.output_dir
+    dirs = make_directories(root_dir=args.output_dir, sub_dirs=["log", "model", "visualization"])
 
     # init helper class
     logger = Logger(save_path=os.path.join(dirs["log"], "log.txt"), muted=False)
@@ -61,10 +67,11 @@ if __name__ == "__main__":
     logger.print("=====================================")
 
     # load user-defined parameters
-    params = load_parameters(model_name=model_name, save_dir=os.path.join(dirs["log"]))
+    args.param_path = "parameters.json" if args.param_path is None else args.param_path
+    params = load_parameters(param_path=args.param_path, model_name=model_name, save_dir=os.path.join(dirs["log"]))
 
     # load dataset
-    dataset = VaeBenchmarkDataset(dataset_name=dataset_name, logger=logger)
+    dataset = VaeBenchmarkDataset(dataset_name=dataset_name, subset=args.subset_dataset, logger=logger)
     dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, batch_size=params["train"]["batch_size"])
     params["common"]["img_channel"] = dataset.img_channel
     params["common"]["y_dim"] = dataset.labels.shape[-1]
@@ -91,14 +98,16 @@ if __name__ == "__main__":
     # example: load_dir = "output/duovae/2d/model/"
     """
     # load_dir = "output/duovae/2d/model/"
-    load_dir = None
+    # load_dir = None
+    load_dir = args.load_dir
     if load_dir is not None:
         load_model(model, load_dir, logger)
     model.train()
 
     # train
     losses_all = {}
-    for epoch in range(1, params["train"]["n_epoch"]+1):
+    starting_epoch = args.starting_epoch
+    for epoch in range(starting_epoch, starting_epoch+params["train"]["n_epoch"]+1):
         losses_curr_epoch = {}
         batch_idx = 0
         for batch_idx, data in enumerate(dataloader, 0):
@@ -133,9 +142,10 @@ if __name__ == "__main__":
             losses_all[loss_name].append(loss_val)
 
         # log every certain epochs
-        do_initial_checks = ((epoch > 0 and epoch <= 50) and (epoch % 10 == 0))
+        # do_initial_checks = ((epoch > 0 and epoch <= 50) and (epoch % 10 == 0))
+        do_initial_checks = False
         if do_initial_checks or (epoch % params["train"]["log_freq"] == 0):
-            loss_str = "epoch:{}/{} ".format(epoch, params["train"]["n_epoch"])
+            loss_str = "epoch:{}/{} ".format(epoch, starting_epoch+params["train"]["n_epoch"])
             for loss_name, loss_vals in losses_all.items():
                 loss_str += "{}:{:.4f} ".format(loss_name, loss_vals[-1])
             logger.print(loss_str)
@@ -145,7 +155,7 @@ if __name__ == "__main__":
             model.eval()
             with torch.no_grad():
                 # save loss plot
-                json_path, save_path = save_losses(save_dir=dirs["log"], epoch=epoch, losses=losses_all)
+                json_path, save_path = save_losses(save_dir=dirs["log"], starting_epoch=starting_epoch, epoch=epoch, losses=losses_all)
                 logger.print("train losses saved: {}, {}".format(json_path, save_path))
 
                 # save model
@@ -153,7 +163,7 @@ if __name__ == "__main__":
                 logger.print("model saved: {}".format(dirs["model"]))
 
                 # save y traverse
-                traversed_y = traverse_y(model_name, model, x=model.x, y=model.y, y_mins=dataset.y_mins, y_maxs=dataset.y_maxs, n_samples=20)
+                traversed_y, _ = traverse_y(model_name, model, x=model.x, y=model.y, y_mins=dataset.y_mins, y_maxs=dataset.y_maxs, n_samples=20)
                 save_path = save_image(traversed_y.squeeze(), os.path.join(dirs["visualization"], "y_trav_{:05d}.png".format(epoch)))
                 logger.print("y-traverse saved: {}".format(save_path))
 

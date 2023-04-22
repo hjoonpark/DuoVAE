@@ -38,7 +38,7 @@ def save_reconstructions(save_dir, model, epoch, n_samples=10):
     save_image(img_out, save_path)
     return save_path
 
-def save_losses(save_dir, losses, epoch):
+def save_losses(save_dir, losses, starting_epoch, epoch):
     # save loss values as json
     json_path = os.path.join(save_dir, "losses.json")
     with open(json_path, "w+") as f:
@@ -47,7 +47,7 @@ def save_losses(save_dir, losses, epoch):
     # save loss values as plot
     plt.figure(figsize=(10, 4))
     matplotlib.rc_file_defaults()
-    x_val = np.arange(1, epoch+1).astype(int)
+    x_val = np.arange(starting_epoch, epoch+1).astype(int)
     for loss_name, loss_val in losses.items():
         plt.plot(x_val, loss_val, linewidth=1, label=loss_name)
     leg = plt.legend(loc='upper left')
