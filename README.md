@@ -1,8 +1,9 @@
 # DuoVAE
 
 PyTorch implementation of DuoVAE (a VAE-framework for property-controlled data generation) proposed in\
-[**Collagen Fiber Centerline Tracking in Fibrotic Tissue via Deep Neural Networks with Variational Autoencoder-based Synthetic Training Data Generation**](),\
-Medical Image Analysis 2022 (Accepted).
+[**Collagen Fiber Centerline Tracking in Fibrotic Tissue via Deep Neural Networks with Variational Autoencoder-based Synthetic Training Data Generation**](https://www.sciencedirect.com/science/article/pii/S1361841523002219),\
+Hyojoon Park, Bin Li, Yuming Liu, Michael S. Nelson, Helen M. Wilson, Eftychios Sifakis, Kevin W. Eliceiri, \
+Medical Image Analysis 2023.
 
 DuoVAE generates data with desired properties controlled by continuous property values.\
 This repository is designed specifically for training and testing on the VAE benchmark datasets:\
@@ -114,4 +115,12 @@ Each of the supervised latent variables $\mathbf{w}$ (top 3 rows) captures the i
 
 ## Citation
 
-    coming
+    @article{park2023collagen,
+             title={Collagen fiber centerline tracking in fibrotic tissue via deep neural networks with variational autoencoder-based synthetic training data generation},
+             author={Park, Hyojoon and Li, Bin and Liu, Yuming and Nelson, Michael S and Wilson, Helen M and Sifakis, Eftychios and Eliceiri, Kevin W},
+             journal={Medical Image Analysis},
+             volume={90},
+             pages={102961},
+             year={2023},
+             publisher={Elsevier}
+    }
