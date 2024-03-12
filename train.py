@@ -43,7 +43,7 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", type=str, help="Output directory", default=None)
     parser.add_argument("--param-path", type=str, help="Parameter file path", default=None)
     parser.add_argument("--subset-dataset", type=bool, help="False to use all number of data", default=False)
-    parser.add_argument("--load-dir", type=str, help="Model directory", default=None)
+    parser.add_argument("--model-dir", type=str, help="Model directory", default=None)
     parser.add_argument("--starting-epoch", type=int, help="Starting epoch number", default=0)
     args = parser.parse_args()
 
@@ -94,14 +94,14 @@ if __name__ == "__main__":
     shutil.copyfile(os.path.join("models", "{}.py".format(model_name)), os.path.join(dirs["model"], "{}.py".format(model_name)))
 
     """
-    # To continue training from a saved checkpoint, set load_dir to a directory containing *.pt files   
-    # example: load_dir = "output/duovae/2d/model/"
+    # To continue training from a saved checkpoint, set model_dir to a directory containing *.pt files   
+    # example: model_dir = "output/duovae/2d/model/"
     """
-    # load_dir = "output/duovae/2d/model/"
-    # load_dir = None
-    load_dir = args.load_dir
-    if load_dir is not None:
-        load_model(model, load_dir, logger)
+    # model_dir = "output/duovae/2d/model/"
+    # model_dir = None
+    model_dir = args.model_dir
+    if model_dir is not None:
+        load_model(model, model_dir, logger)
     model.train()
 
     # train

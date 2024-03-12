@@ -65,7 +65,7 @@ def save_losses(save_dir, losses, starting_epoch, epoch):
     plt.close()
     return json_path, save_path
 
-def save_MI_score(save_dir, MI, model_name, epoch):
+def save_MI_score(save_dir, MI, model_name, epoch=None):
     fs = 10
     W = 2.4
     sns.set()
@@ -91,7 +91,10 @@ def save_MI_score(save_dir, MI, model_name, epoch):
 
     plt.title(model_name.upper().replace("_", ""), fontsize=fs)
     plt.tight_layout()
-    save_path = os.path.join(save_dir, "MI_{}_{:05d}.png".format(model_name, epoch))
+    if epoch is None:
+        save_path = os.path.join(save_dir, "MI_{}.png".format(model_name))
+    else:
+        save_path = os.path.join(save_dir, "MI_{}_{:05d}.png".format(model_name, epoch))
     plt.savefig(save_path, dpi=150)
     plt.close()
 

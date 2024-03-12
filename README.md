@@ -44,6 +44,14 @@ Then, install [PyTorch](https://pytorch.org/get-started/locally/) with either CP
 Other configuration methods can be found [here](/etc/doc/installation.md).\
 List of tested versions can be found [here](/etc/doc/tested_versions.md).
 
+## Prepare datasets
+
+Running `train.py` (see `Train` section below) will automatically download the needed datasets.
+To download them directly, run
+
+    bash download_datasets.sh
+
+  This will download [dSprites](https://github.com/deepmind/dsprites-dataset) and [3dshapes](https://github.com/deepmind/3d-shapes) to: `./datasets/data/`.
 
 ## Train
 
