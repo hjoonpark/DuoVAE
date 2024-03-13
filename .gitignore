@@ -1,5 +1,6 @@
 ablation*/
-nohup.out
+nohup.*
+output*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

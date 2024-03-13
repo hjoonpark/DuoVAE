@@ -4,7 +4,6 @@ import argparse
 import shutil
 
 from models.duovae import DuoVAE
-from models.pcvae import PcVAE
 
 from datasets.vae_benchmark_dataset import VaeBenchmarkDataset
 from utils.logger import Logger, LogLevel
