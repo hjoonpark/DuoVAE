@@ -55,13 +55,9 @@ To download them directly, run
 
 ## Train
 
-Command format is `python train.py <model-name> <dataset-type>`, for example
+Command format is `python train.py <dataset-type>`, for example
 
     python train.py duovae 2d
-
-`<model-name>`
-- `duovae` to use DuoVAE (ours)
-- `pcvae` to use [PCVAE](https://github.com/xguo7/PCVAE) (for comparisons)
 
 `<dataset-type>` 
 - `2d` to use [dSprites](https://github.com/deepmind/dsprites-dataset)

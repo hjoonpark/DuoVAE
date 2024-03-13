@@ -4,7 +4,6 @@ import argparse
 import shutil
 
 from models.duovae import DuoVAE
-from models.pcvae import PcVAE
 
 from datasets.vae_benchmark_dataset import VaeBenchmarkDataset
 from utils.logger import Logger, LogLevel
@@ -14,7 +13,7 @@ from utils.util_model import load_model, save_model, save_mutual_information, ge
 import torch
 import numpy as np
 
-MODELS_SUPPORTED = set(["duovae", "pcvae"])
+MODELS_SUPPORTED = set(["duovae"])
 DATASETS_SUPPORTED = set(["2d", "3d"])
 
 def load_parameters(param_path, model_name, save_dir):
@@ -38,13 +37,13 @@ if __name__ == "__main__":
     # parse input arguments: two inputs are required <model_name> and <dataset_type>
     description = "PyTorch implementation of DuoVAE"
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("model", type=str, help="Model: duovae, pcvae", default="duovae")
     parser.add_argument("dataset", type=str, help="Dataset: 2d, 3d", default="2d")
     parser.add_argument("--output-dir", type=str, help="Output directory", default=None)
     parser.add_argument("--param-path", type=str, help="Parameter file path", default=None)
     parser.add_argument("--subset-dataset", type=bool, help="False to use all number of data", default=False)
     parser.add_argument("--model-dir", type=str, help="Model directory", default=None)
     parser.add_argument("--starting-epoch", type=int, help="Starting epoch number", default=0)
+    parser.add_argument("--model", type=str, help="Model: duovae", default="duovae")
     args = parser.parse_args()
 
     # input args needed
@@ -79,10 +78,8 @@ if __name__ == "__main__":
     # init models
     if model_name == "duovae":
         model = DuoVAE(params=params, is_train=True, logger=logger)
-    elif model_name == "pcvae":
-        model = PcVAE(params=params, is_train=True, logger=logger)
     else:
-        raise NotImplementedError("Only duovae and pcvae models are supported.")
+        raise NotImplementedError("Only 'duovae' is supported.")
 
     # log model information
     logger.print(model)

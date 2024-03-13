@@ -19,9 +19,5 @@
     },
     "duovae": {
         "beta_w2": 0.005
-    },
-    "pcvae": {
-        "beta_groupwise": 0.005,
-        "beta_pairwise": 0.005
     }
 }

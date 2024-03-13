@@ -24,8 +24,8 @@ def get_available_devices(logger):
     if torch.cuda.is_available():
         logger.print("CUDA is available")
         torch.cuda.empty_cache()
-        n_gpu = torch.cuda.device_count()
-        
+        # n_gpu = torch.cuda.device_count()
+        n_gpu = 1 # only 1 gpu is supported in this version
         gpu_ids = [i for i in range(n_gpu)]
         device = "cuda:0"
     else:
@@ -120,10 +120,8 @@ def traverse_y(model_name, model, x, y, y_mins, y_maxs, n_samples, logger=None):
             # encode for w
             if model_name == "duovae":
                 w, _ = model.encoder_y(y_new)
-            elif model_name == "pcvae":
-                w = model.iterate_get_w(label=y_new, w_latent_idx=y_idx)[None, :]
             else:
-                raise NotImplementedError("Only duovae and pcvae models are supported.")
+                raise NotImplementedError("Only 'duovae' is supported.")
 
             # decode: differs by model
             _, x_recon, _ = model.decode(z, w)
